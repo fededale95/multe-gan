@@ -23,7 +23,7 @@ jobs:
 
       # GitHub sospende le attività programmate dopo 60 giorni senza modifiche al repository:
       # una volta al mese aggiorniamo un piccolo file per evitarlo.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Segno di attività mensile
         run: |
           last=$(git log -1 --format=%ct)
