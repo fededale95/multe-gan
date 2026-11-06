@@ -1,0 +1,40 @@
+name: Tieni attivo Supabase
+
+on:
+  schedule:
+    - cron: "0 8 * * 1,4"   # lunedì e giovedì alle 8:00 UTC
+  workflow_dispatch:         # permette di avviarlo a mano da "Actions"
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lettura dal database
+        env:
+          URL: https://xtrqqyrjjjmtwylxqndx.supabase.co/rest/v1/giocatori?select=nome&limit=1
+          KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0cnFxeXJqamptdHd5bHhxbmR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5NjA0OTYsImV4cCI6MjEwOTUzNjQ5Nn0.PJpvtH5nishQfsP5PjubNRJc4rOUZNPccw6SO1WCQTQ
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "Risposta Supabase: $code"
+          test "$code" = "200"
+
+      # GitHub sospende le attività programmate dopo 60 giorni senza modifiche al repository:
+      # una volta al mese aggiorniamo un piccolo file per evitarlo.
+      - uses: actions/checkout@v4
+      - name: Segno di attività mensile
+        run: |
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          if [ $(( (now - last) / 86400 )) -ge 30 ]; then
+            date -u +"%Y-%m-%d %H:%M UTC" > .github/ultimo-controllo.txt
+            git config user.name "github-actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add .github/ultimo-controllo.txt
+            git commit -m "Controllo mensile automatico"
+            git push
+          else
+            echo "Ultima modifica recente, niente da fare."
+          fi
