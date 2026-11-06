@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Multe GAN</title>
+<meta name="theme-color" content="#24812f">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: club band header, score strip, segmented views; one centered column (max 980px) that stacks at phone width. */
+:root{
+  --bg:#f3f7f1; --surface:#ffffff; --surface-2:#eaf2e7; --ink:#13261a; --muted:#5a6d5f; --line:#d9e4d5;
+  --green:#2f9a3a; --green-ink:#1f6e29; --orange:#f08a00; --orange-soft:#fff1dc; --orange-ink:#9a5600;
+  --band:#24812f; --band-ink:#ffffff; --danger:#c43c2c; --danger-soft:#fde8e5; --ok-soft:#e1f3df; --on-green:#ffffff;
+  --shadow:0 1px 2px rgba(19,38,26,.06),0 4px 16px rgba(19,38,26,.06);
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0d1610; --surface:#152119; --surface-2:#1b2b20; --ink:#e7f0e5; --muted:#9bb0a0; --line:#27392d;
+  --green:#57c25a; --green-ink:#8be08b; --orange:#ffa53a; --orange-soft:#3a2810; --orange-ink:#ffc47a;
+  --band:#17521f; --band-ink:#f2fbef; --danger:#ff7a68; --danger-soft:#3a1814; --ok-soft:#183a1d; --on-green:#07210b;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25); color-scheme:dark}}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--band)}
+img{max-width:100%}
+[hidden]{display:none!important}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.band{background:var(--band);color:var(--band-ink);border-bottom:5px solid var(--orange)}
+.band .wrap{display:flex;align-items:center;gap:14px;padding-block:14px}
+.logo{width:58px;height:58px;border-radius:50%;background:#fff;padding:2px;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.brand{min-width:0;flex:1}
+.brand h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(28px,6vw,40px);line-height:1;letter-spacing:.01em;text-transform:uppercase}
+.brand h1 b{color:var(--orange);font-weight:800}
+.brand p{margin:3px 0 0;font-size:13px;opacity:.85;letter-spacing:.06em;text-transform:uppercase}
+.btn-admin{border:1.5px solid rgba(255,255,255,.55);background:transparent;color:var(--band-ink);border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px;display:inline-flex;gap:7px;align-items:center;white-space:nowrap}
+.btn-admin:hover{background:rgba(255,255,255,.12)}
+.btn-admin svg{width:16px;height:16px}
+
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.stat .k{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.stat .v{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.1;margin-top:2px;overflow-wrap:anywhere}
+.stat .s{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat.paid .v{color:var(--green-ink)} .stat.due .v{color:var(--orange-ink)}
+@media (max-width:700px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:4px;margin:20px 0 14px;overflow-x:auto}
+.tab{flex:1;border:0;background:transparent;border-radius:9px;padding:9px 12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.tab.mgmt[aria-selected="true"]{background:var(--orange);color:#1f1200}
+@media (max-width:480px){.tabs{flex-wrap:wrap}.tab{flex:1 1 40%;padding:8px 6px;font-size:14px}}
+
+.list{display:flex;flex-direction:column;gap:8px}
+.prow{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.prow > button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 14px;cursor:pointer}
+.prow > button:focus-visible{outline:3px solid var(--orange);outline-offset:-3px}
+.rank{font-family:var(--f-display);font-weight:800;font-size:22px;color:var(--muted);text-align:center}
+.prow.top .rank{color:var(--orange)}
+.pname{display:block;font-weight:700;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmeta{display:block;font-size:13px;color:var(--muted)}
+.bar{height:6px;border-radius:99px;background:var(--surface-2);margin-top:6px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .p{background:var(--green)} .bar .d{background:var(--orange)}
+.ptot{text-align:right}
+.ptot .v{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1}
+.ptot .s{font-size:12.5px;color:var(--orange-ink);font-weight:600}
+.ptot .s.ok{color:var(--green-ink)}
+.pdetail{border-top:1px solid var(--line);padding:6px 14px 10px;background:var(--surface-2)}
+.crown{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--orange-soft);color:var(--orange-ink);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:2px}
+
+.month{font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px;display:flex;justify-content:space-between;gap:8px}
+.month:first-child{margin-top:0}
+.fine{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.pdetail .fine{margin-top:6px}
+.date{text-align:center;line-height:1.05;border-right:1px solid var(--line);padding-right:10px}
+.date .d{font-family:var(--f-display);font-weight:800;font-size:24px}
+.date .m{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.fbody{min-width:0}
+.fwho{font-weight:700}
+.fwhy{font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
+.fnote{font-size:12.5px;color:var(--muted);font-style:italic;overflow-wrap:anywhere}
+.fright{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.amount{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:99px;padding:2px 9px;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-soft);color:var(--green-ink)}
+.pill.due{background:var(--orange-soft);color:var(--orange-ink)}
+.pill.late{background:var(--danger-soft);color:var(--danger)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters select{min-width:0;flex:1 1 160px}
+
+select,input[type=text],input[type=password],input[type=number],input[type=date]{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;width:100%;min-width:0}
+select:focus,input:focus{border-color:var(--green);outline:none}
+label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--muted);min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 12px;font-family:var(--f-display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.03em}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid .full{grid-column:1/-1}
+@media (max-width:600px){.grid{grid-template-columns:minmax(0,1fr)}}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:700;background:var(--surface-2);color:var(--ink)}
+.btn.primary{background:var(--green);color:var(--on-green)}
+.btn.accent{background:var(--orange);color:#1f1200}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+.switch{display:flex;flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-size:14px;cursor:pointer}
+.switch input{appearance:none;-webkit-appearance:none;width:44px;height:26px;border-radius:99px;background:var(--line);position:relative;margin:0;cursor:pointer;flex:none;transition:background .15s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch input:checked{background:var(--green)}
+.switch input:checked::after{left:21px}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 14px;font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{border-color:var(--green);background:var(--ok-soft);color:var(--green-ink)}
+.afine{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.afine:first-child{border-top:0}
+.afine .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:600px){.afine{grid-template-columns:minmax(0,1fr)}.afine .acts{justify-content:flex-start}}
+.muted{color:var(--muted)}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.empty{text-align:center;padding:36px 16px;color:var(--muted);background:var(--surface);border:1.5px dashed var(--line);border-radius:14px}
+.empty strong{display:block;color:var(--ink);font-family:var(--f-display);font-size:22px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+
+.tablewrap{overflow-x:auto}
+.rules{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line)}
+.rules td,.rules th{padding:9px 12px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+.rules th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);background:var(--surface-2);border-top:0}
+.rules td.c{font-family:var(--f-display);font-weight:700;color:var(--muted);width:40px}
+.rules td.a{text-align:right;white-space:nowrap;font-weight:700}
+.lvl{display:inline-block;min-width:44px;text-align:center;border-radius:6px;padding:1px 6px;font-family:var(--f-display);font-size:16px}
+.lvl1{background:var(--ok-soft);color:var(--green-ink)}
+.lvl2,.lvl3{background:var(--orange-soft);color:var(--orange-ink)}
+.lvl5{background:var(--danger-soft);color:var(--danger)}
+.note-box{margin-top:12px;padding:12px 14px;border-left:4px solid var(--orange);background:var(--orange-soft);border-radius:0 10px 10px 0;font-size:14px}
+
+.overlay{position:fixed;inset:0;background:rgba(5,15,8,.55);display:grid;place-items:center;padding:16px;z-index:50}
+.modal{width:min(400px,100%);background:var(--surface);border-radius:16px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:12px}
+.modal h2{margin:0;font-family:var(--f-display);font-size:26px;text-transform:uppercase}
+.err{color:var(--danger);font-size:13.5px;font-weight:600;margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);box-shadow:var(--shadow);border-radius:12px;padding:10px 16px;font-weight:600;max-width:calc(100% - 32px)}
+.toast.bad{background:var(--danger);color:#fff}
+.skeleton{height:64px;border-radius:12px;background:var(--surface-2);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.5}}
+main{padding-bottom:80px}
+footer{margin-top:28px;font-size:12.5px;color:var(--muted);text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+"use strict";
+var CFG=window.MULTE_GAN_CONFIG||{};
+var RULES=[
+ {c:1,t:"Ritardo fino a 5 minuti senza preavviso",a:1},
+ {c:2,t:"Ritardo da 5 a 15 minuti senza preavviso",a:2},
+ {c:3,t:"Ritardo superiore a 15 minuti senza preavviso",a:3},
+ {c:4,t:"Mancata comunicazione dell’assenza",a:5},
+ {c:5,t:"Disturbare il gruppo durante spiegazioni o preparazione gara/allenamento",a:2},
+ {c:6,t:"Mancanza di rispetto verso compagni o staff",a:5},
+ {c:9,t:"Scarso rispetto del materiale societario",a:2},
+ {c:10,t:"Lasciare deliberatamente materiale in disordine",a:1},
+ {c:11,t:"Linguaggio offensivo verso un compagno",a:3},
+ {c:12,t:"Comportamento violento o gravemente antisportivo",a:5},
+ {c:13,t:"Lasciare spogliatoio / postazione in disordine",a:1},
+ {c:14,t:"Non collaborare alla raccolta del materiale quando richiesto",a:1},
+ {c:15,t:"Danneggiamento dovuto a comportamento irresponsabile",a:3},
+ {c:16,t:"Proteste inutili o reiterate verso l’arbitro",a:2},
+ {c:17,t:"Ammonizione per proteste o comportamento evitabile",a:3},
+ {c:18,t:"Espulsione per proteste, insulti o comportamento antisportivo",a:5},
+ {c:19,t:"Comportamento irrispettoso in panchina",a:3},
+ {c:20,t:"Mancanza di rispetto verso avversari, arbitro o pubblico",a:5},
+ {c:21,t:"Utilizzo improprio della chat di gruppo",a:1}
+];
+var MONTHS=["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+var MONTHS_L=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+var $=function(s){return document.querySelector(s)};
+var root=$("#root");
+var ls={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}};
+
+var configured=CFG.SUPABASE_URL&&CFG.SUPABASE_URL.indexOf("INSERISCI")<0&&CFG.SUPABASE_ANON_KEY&&CFG.SUPABASE_ANON_KEY.indexOf("INSERISCI")<0&&window.supabase;
+var sb=configured?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):null;
+
+var state={players:[],fines:[]};
+var ui={view:ls.get("gan-view")||"giocatori",admin:false,atab:"nuova",fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
+if(ui.view==="gestione")ui.view="giocatori";
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function eur(n){n=Number(n)||0;return n.toLocaleString("it-IT",{style:"currency",currency:"EUR",minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function parseD(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2])}
+function fmtD(s){var d=parseD(s);return d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear()}
+function isLate(f){if(f.paid)return false;var due=parseD(f.date);due.setDate(due.getDate()+7);return parseD(today())>due}
+function statusPill(f){if(f.paid)return'<span class="pill ok">Saldata</span>';if(isLate(f))return'<span class="pill late">Scaduta</span>';return'<span class="pill due">Da saldare</span>'}
+function sortFines(a){return a.slice().sort(function(x,y){return x.date<y.date?1:x.date>y.date?-1:(y.created>x.created?1:-1)})}
+function clean(s){return(s||"").trim().replace(/\s+/g," ")}
+
+/* ---------- data ---------- */
+function fromRow(r){return{id:r.id,player:r.giocatore,code:r.articolo,reason:r.motivazione,amount:Number(r.importo),date:r.data,note:r.nota||"",paid:r.saldata,paidDate:r.data_saldo,doubled:r.raddoppiata,created:r.created_at||""}}
+function load(){
+  if(!sb){ui.loading=false;render();return Promise.resolve()}
+  return Promise.all([
+    sb.from("giocatori").select("nome").order("nome"),
+    sb.from("multe").select("*").order("data",{ascending:false})
+  ]).then(function(res){
+    if(res[0].error)throw res[0].error;if(res[1].error)throw res[1].error;
+    state.players=res[0].data.map(function(r){return r.nome});
+    state.fines=res[1].data.map(fromRow);
+    ui.loading=false;ui.loadErr="";render();
+  }).catch(function(e){ui.loading=false;ui.loadErr=(e&&e.message)||"errore di rete";render()});
+}
+// run a write, then reload everything; err messages in Italian
+function run(promise,okMsg){
+  ui.busy=true;render();
+  return promise.then(function(r){
+    if(r&&r.error)throw r.error;
+    return load().then(function(){ui.busy=false;if(okMsg)toast(okMsg);else render();return true});
+  }).catch(function(e){
+    ui.busy=false;
+    var m=(e&&e.message)||"";
+    if(/row-level security|permission|JWT|not authorized/i.test(m))toast("Non hai i permessi per modificare: rifai l’accesso admin.",true);
+    else if(/duplicate key/i.test(m))toast("Esiste già un elemento con questo nome.",true);
+    else if(/foreign key/i.test(m))toast("Il giocatore ha ancora multe registrate.",true);
+    else toast("Operazione non riuscita: "+(m||"errore di rete"),true);
+    return false;
+  });
+}
+function ensurePlayer(name){
+  if(state.players.indexOf(name)>=0)return Promise.resolve({});
+  return sb.from("giocatori").insert({nome:name});
+}
+
+function totals(){
+  var t={all:0,paid:0,due:0,n:state.fines.length,late:0},byReason={};
+  state.fines.forEach(function(f){t.all+=f.amount;if(f.paid)t.paid+=f.amount;else{t.due+=f.amount;if(isLate(f))t.late++}byReason[f.reason]=(byReason[f.reason]||0)+1});
+  var top=null;Object.keys(byReason).forEach(function(k){if(!top||byReason[k]>byReason[top])top=k});
+  t.topReason=top;t.topReasonN=top?byReason[top]:0;return t;
+}
+function playerStats(){
+  var m={};
+  state.players.forEach(function(p){m[p]={name:p,tot:0,paid:0,due:0,n:0,fines:[]}});
+  state.fines.forEach(function(f){var p=m[f.player]||(m[f.player]={name:f.player,tot:0,paid:0,due:0,n:0,fines:[]});p.tot+=f.amount;p.n++;if(f.paid)p.paid+=f.amount;else p.due+=f.amount;p.fines.push(f)});
+  return Object.keys(m).map(function(k){return m[k]}).sort(function(a,b){return b.tot-a.tot||a.name.localeCompare(b.name,"it")});
+}
+
+/* ---------- views ---------- */
+function header(){
+  var btn=ui.admin
+    ?'<button class="btn-admin" data-act="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 17l5-5-5-5M20 12H9M12 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7"/></svg>Esci</button>'
+    :'<button class="btn-admin" data-act="openLogin"'+(sb?'':' disabled')+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Accesso admin</button>';
+  return'<header class="band"><div class="wrap"><img class="logo" src="logo.png" alt="Logo ASD GaN Milano"><div class="brand"><h1>Multe <b>GAN</b></h1><p>GAN Open C1 · Cassa squadra</p></div>'+btn+'</div></header>';
+}
+function strip(){
+  var t=totals();
+  return'<section class="strip" aria-label="Riepilogo">'+
+   '<div class="stat"><div class="k">Totale multe</div><div class="v num">'+eur(t.all)+'</div><div class="s">'+t.n+(t.n===1?" multa":" multe")+' registrate</div></div>'+
+   '<div class="stat paid"><div class="k">In cassa</div><div class="v num">'+eur(t.paid)+'</div><div class="s">già saldate</div></div>'+
+   '<div class="stat due"><div class="k">Da incassare</div><div class="v num">'+eur(t.due)+'</div><div class="s">'+(t.late?t.late+" scadut"+(t.late===1?"a":"e")+" (oltre 7 giorni)":"nessuna scaduta")+'</div></div>'+
+   '<div class="stat"><div class="k">Infrazione top</div><div class="v num">'+(t.topReason?t.topReasonN+"×":"—")+'</div><div class="s" title="'+esc(t.topReason||"")+'">'+esc(t.topReason||"ancora nessuna")+'</div></div>'+
+  '</section>';
+}
+function tabs(){
+  var items=[["giocatori","Per giocatore"],["cronologia","Cronologia"],["regolamento","Regolamento"]];
+  if(ui.admin)items.push(["gestione","Gestione"]);
+  return'<nav class="tabs" role="tablist">'+items.map(function(i){return'<button class="tab'+(i[0]==="gestione"?" mgmt":"")+'" role="tab" aria-selected="'+(ui.view===i[0])+'" data-act="view" data-v="'+i[0]+'">'+i[1]+'</button>'}).join("")+'</nav>';
+}
+function emptyBox(){
+  return'<div class="empty"><strong>Nessuna multa, per ora</strong>Quando il capitano registra una multa, qui compaiono i totali di ogni giocatore.'+(ui.admin?'<div style="margin-top:12px"><button class="btn accent" data-act="view" data-v="gestione">Aggiungi la prima multa</button></div>':'')+'</div>';
+}
+function statusBox(){
+  if(!sb)return'<div class="empty"><strong>Sito da configurare</strong>Inserisci indirizzo e chiave di Supabase nel file <code>config.js</code>, come spiegato nella guida.</div>';
+  if(ui.loading)return'<div class="list"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
+  if(ui.loadErr)return'<div class="empty"><strong>Dati non disponibili</strong>Non riesco a leggere le multe ('+esc(ui.loadErr)+').<div style="margin-top:12px"><button class="btn primary" data-act="reload">Riprova</button></div></div>';
+  return"";
+}
+function fineCard(f,showWho){
+  var d=parseD(f.date);
+  return'<div class="fine"><div class="date"><div class="d num">'+d.getDate()+'</div><div class="m">'+MONTHS[d.getMonth()]+'</div></div>'+
+   '<div class="fbody">'+(showWho?'<div class="fwho">'+esc(f.player)+'</div>':'')+'<div class="fwhy">'+(f.code?"Art. "+f.code+" · ":"")+esc(f.reason)+(f.doubled?" · <b>raddoppiata</b>":"")+'</div>'+(f.note?'<div class="fnote">'+esc(f.note)+'</div>':'')+'</div>'+
+   '<div class="fright"><span class="amount num">'+eur(f.amount)+'</span>'+statusPill(f)+'</div></div>';
+}
+function viewPlayers(){
+  var ps=playerStats().filter(function(p){return p.n>0});
+  if(!ps.length)return emptyBox();
+  var max=ps[0].tot;
+  return'<div class="list">'+ps.map(function(p,i){
+    var open=ui.open===p.name,paidW=p.tot?p.paid/p.tot*100:0,top=i===0&&p.tot>0;
+    return'<div class="prow'+(top?" top":"")+'"><button data-act="toggle" data-p="'+esc(p.name)+'" aria-expanded="'+open+'">'+
+      '<span class="rank num">'+(i+1)+'</span>'+
+      '<span style="min-width:0"><span class="pname">'+esc(p.name)+'</span><span class="pmeta">'+p.n+(p.n===1?" multa":" multe")+(top?'<span class="crown">Maglia nera</span>':'')+'</span>'+
+      '<span class="bar" style="width:'+(max?Math.max(8,p.tot/max*100):8)+'%"><i class="p" style="width:'+paidW+'%"></i><i class="d" style="width:'+(100-paidW)+'%"></i></span></span>'+
+      '<span class="ptot"><span class="v num">'+eur(p.tot)+'</span><br><span class="s'+(p.due?"":" ok")+'">'+(p.due?"da saldare "+eur(p.due):"tutto saldato")+'</span></span>'+
+    '</button>'+(open?'<div class="pdetail">'+sortFines(p.fines).map(function(f){return fineCard(f,false)}).join("")+'</div>':'')+'</div>';
+  }).join("")+'</div><p class="hint">Tocca un giocatore per vedere le sue multe. Barra verde = saldato, arancio = da saldare.</p>';
+}
+function viewChrono(){
+  if(!state.fines.length)return emptyBox();
+  var names=playerStats().filter(function(p){return p.n}).map(function(p){return p.name}).sort(function(a,b){return a.localeCompare(b,"it")});
+  var list=sortFines(state.fines).filter(function(f){
+    if(ui.fPlayer&&f.player!==ui.fPlayer)return false;
+    if(ui.fStatus==="aperte"&&f.paid)return false;
+    if(ui.fStatus==="saldate"&&!f.paid)return false;
+    if(ui.fStatus==="scadute"&&!isLate(f))return false;
+    return true;
+  });
+  var h='<div class="filters"><select id="f-player" aria-label="Filtra per giocatore"><option value="">Tutti i giocatori</option>'+names.map(function(n){return'<option'+(n===ui.fPlayer?" selected":"")+'>'+esc(n)+'</option>'}).join("")+'</select>'+
+   '<select id="f-status" aria-label="Filtra per stato">'+[["tutte","Tutte le multe"],["aperte","Da saldare"],["scadute","Scadute"],["saldate","Saldate"]].map(function(o){return'<option value="'+o[0]+'"'+(o[0]===ui.fStatus?" selected":"")+'>'+o[1]+'</option>'}).join("")+'</select></div>';
+  if(!list.length)return h+'<div class="empty"><strong>Nessun risultato</strong>Nessuna multa corrisponde ai filtri scelti.</div>';
+  var groups=[],cur=null;
+  list.forEach(function(f){var k=f.date.slice(0,7);if(!cur||cur.k!==k){cur={k:k,items:[],sum:0};groups.push(cur)}cur.items.push(f);cur.sum+=f.amount});
+  return h+'<div class="list">'+groups.map(function(g){var d=parseD(g.k+"-01");return'<div class="month"><span>'+MONTHS_L[d.getMonth()]+" "+d.getFullYear()+'</span><span class="num">'+eur(g.sum)+'</span></div>'+g.items.map(function(f){return fineCard(f,true)}).join("")}).join("")+'</div>';
+}
+function viewRules(){
+  return'<div class="tablewrap"><table class="rules"><thead><tr><th>Art.</th><th>Comportamento / infrazione</th><th style="text-align:right">Ammenda</th></tr></thead><tbody>'+
+   RULES.map(function(r){return'<tr><td class="c num">'+r.c+'</td><td>'+esc(r.t)+'</td><td class="a"><span class="lvl lvl'+r.a+' num">'+eur(r.a)+'</span></td></tr>'}).join("")+
+   '<tr><td class="c num">22</td><td>Ritardi nel versamento dell’ammenda</td><td class="a"><span class="lvl lvl5">×2</span></td></tr></tbody></table></div>'+
+   '<div class="note-box"><b>La multa va pagata entro una settimana dall’infrazione</b>, altrimenti raddoppia. Le somme sono annotate e conservate da capitano e vice-capitano (Di Poce e Colantuoni Luca) e destinate solo ad attività o necessità della squadra.</div>'+
+   '<p class="hint">Il regolamento tutela puntualità, rispetto, ordine, responsabilità e spirito di squadra. Le ammende vanno da 1 a 5 € in base alla gravità.</p>';
+}
+
+/* ---------- admin ---------- */
+function viewAdmin(){
+  var sub=[["nuova",ui.editId?"Modifica multa":"Nuova multa"],["elenco","Tutte le multe ("+state.fines.length+")"],["giocatori","Giocatori ("+state.players.length+")"],["accesso","Password"]];
+  var h='<div class="subtabs">'+sub.map(function(s){return'<button class="chip" aria-pressed="'+(ui.atab===s[0])+'" data-act="atab" data-v="'+s[0]+'">'+s[1]+'</button>'}).join("")+'</div>';
+  if(ui.atab==="nuova")h+=fineForm();
+  else if(ui.atab==="elenco")h+=adminList();
+  else if(ui.atab==="giocatori")h+=adminPlayers();
+  else h+=adminPassword();
+  return h;
+}
+function fineForm(){
+  var f=ui.editId?state.fines.filter(function(x){return x.id===ui.editId})[0]:null;
+  if(ui.editId&&!f)ui.editId=null;
+  var players=state.players.slice().sort(function(a,b){return a.localeCompare(b,"it")});
+  var selP=f?f.player:"",ruleSel=f?(f.code?String(f.code):"altro"):"";
+  return'<form class="card" id="fine-form" autocomplete="off"><h2>'+(f?"Modifica multa":"Nuova multa")+'</h2><div class="grid">'+
+   '<label>Giocatore<select id="f-pl" required><option value="" disabled'+(selP?"":" selected")+'>Scegli…</option>'+players.map(function(p){return'<option'+(p===selP?" selected":"")+'>'+esc(p)+'</option>'}).join("")+'<option value="__new">+ Nuovo giocatore…</option></select></label>'+
+   '<label id="f-newpl-wrap" hidden>Nome nuovo giocatore<input type="text" id="f-newpl" maxlength="40" placeholder="Es. Rossi Marco"></label>'+
+   '<label>Data<input type="date" id="f-date" required value="'+(f?f.date:today())+'"></label>'+
+   '<label class="full">Motivazione<select id="f-rule" required><option value="" disabled'+(ruleSel?"":" selected")+'>Scegli dal regolamento…</option>'+RULES.map(function(r){return'<option value="'+r.c+'"'+(String(r.c)===ruleSel?" selected":"")+'>'+r.c+". "+esc(r.t)+" — "+eur(r.a)+'</option>'}).join("")+'<option value="altro"'+(ruleSel==="altro"?" selected":"")+'>Altro (scrivi la motivazione)</option></select></label>'+
+   '<label class="full" id="f-custom-wrap"'+(ruleSel==="altro"?"":" hidden")+'>Motivazione personalizzata<input type="text" id="f-custom" maxlength="120" value="'+(f&&!f.code?esc(f.reason):"")+'"></label>'+
+   '<label>Importo (€)<input type="number" id="f-amount" min="0.5" step="0.5" required value="'+(f?f.amount:"")+'"></label>'+
+   '<label>Nota (facoltativa)<input type="text" id="f-note" maxlength="140" placeholder="Es. partita del sabato" value="'+(f?esc(f.note):"")+'"></label>'+
+   '<label class="switch full"><input type="checkbox" id="f-paid"'+(f&&f.paid?" checked":"")+'> Saldata</label>'+
+   '</div><p class="err" id="f-err" hidden></p><div class="row" style="margin-top:14px"><span class="spacer"></span>'+(f?'<button type="button" class="btn" data-act="cancelEdit">Annulla</button>':'')+'<button class="btn primary" type="submit"'+(ui.busy?" disabled":"")+'>'+(f?"Salva modifiche":"Aggiungi multa")+'</button></div></form>';
+}
+function adminList(){
+  if(!state.fines.length)return'<div class="empty"><strong>Elenco vuoto</strong>Aggiungi una multa dalla scheda “Nuova multa”.</div>';
+  var dis=ui.busy?" disabled":"";
+  return'<div class="card">'+sortFines(state.fines).map(function(f){
+    var del=ui.confirmDel===f.id
+      ?'<span class="muted" style="font-size:13px">Eliminare?</span><button class="btn sm danger" data-act="del" data-id="'+f.id+'"'+dis+'>Sì, elimina</button><button class="btn sm" data-act="noDel">No</button>'
+      :'<button class="btn sm" data-act="edit" data-id="'+f.id+'">Modifica</button><button class="btn sm" data-act="askDel" data-id="'+f.id+'">Elimina</button>';
+    return'<div class="afine"><div style="min-width:0"><div><b>'+esc(f.player)+'</b> · <span class="num">'+eur(f.amount)+'</span> '+statusPill(f)+'</div><div class="fwhy">'+fmtD(f.date)+" · "+(f.code?"Art. "+f.code+" · ":"")+esc(f.reason)+(f.doubled?" · raddoppiata":"")+'</div></div>'+
+      '<div class="acts"><button class="btn sm '+(f.paid?"":"primary")+'" data-act="paid" data-id="'+f.id+'"'+dis+'>'+(f.paid?"Segna non saldata":"Segna saldata")+'</button>'+(isLate(f)&&!f.doubled?'<button class="btn sm accent" data-act="double" data-id="'+f.id+'" title="Art. 22: ritardo nel versamento"'+dis+'>Raddoppia</button>':'')+del+'</div></div>';
+  }).join("")+'</div>';
+}
+function adminPlayers(){
+  var counts={};state.fines.forEach(function(f){counts[f.player]=(counts[f.player]||0)+1});
+  var ps=state.players.slice().sort(function(a,b){return a.localeCompare(b,"it")}),dis=ui.busy?" disabled":"";
+  return'<form class="card" id="pl-form" autocomplete="off"><h2>Rosa</h2><div class="row"><input type="text" id="pl-new" maxlength="40" placeholder="Cognome Nome" style="flex:1 1 200px" aria-label="Nome giocatore"><button class="btn primary" type="submit"'+dis+'>Aggiungi</button></div>'+
+   (ps.length?'<div style="margin-top:8px">'+ps.map(function(p){
+     var n=counts[p]||0;
+     if(ui.renameP===p)return'<div class="afine"><input type="text" id="pl-rename" maxlength="40" value="'+esc(p)+'" aria-label="Nuovo nome"><div class="acts"><button type="button" class="btn sm primary" data-act="renameOk" data-p="'+esc(p)+'"'+dis+'>Salva nome</button><button type="button" class="btn sm" data-act="renameNo">Annulla</button></div></div>';
+     return'<div class="afine"><div><b>'+esc(p)+'</b> <span class="muted" style="font-size:13px">· '+n+(n===1?" multa":" multe")+'</span></div><div class="acts"><button type="button" class="btn sm" data-act="rename" data-p="'+esc(p)+'">Rinomina</button>'+(n?'':'<button type="button" class="btn sm" data-act="rmPl" data-p="'+esc(p)+'"'+dis+'>Rimuovi</button>')+'</div></div>';
+   }).join("")+'</div>':'<p class="hint">Nessun giocatore in rosa. Aggiungili qui, oppure direttamente dal modulo della multa.</p>')+
+   '<p class="hint">Un giocatore con multe registrate non si può rimuovere; rinominarlo aggiorna anche le sue multe.</p></form>';
+}
+function adminPassword(){
+  return'<form class="card" id="pw-form" autocomplete="off"><h2>Cambia password</h2><div class="grid">'+
+   '<label>Nuova password<input type="password" id="c-pw" required minlength="8" autocomplete="new-password"></label>'+
+   '<label>Ripeti password<input type="password" id="c-pw2" required minlength="8" autocomplete="new-password"></label></div>'+
+   '<p class="err" id="c-err" hidden></p><div class="row" style="margin-top:14px"><span class="spacer"></span><button class="btn primary" type="submit"'+(ui.busy?" disabled":"")+'>Aggiorna password</button></div>'+
+   '<p class="hint">Vale dal prossimo accesso. Il nome utente resta lo stesso.</p></form>';
+}
+function loginModal(){
+  if(!ui.login)return"";
+  return'<div class="overlay" data-act="closeLogin"><form class="modal" id="login-form" autocomplete="on"><h2>Accesso admin</h2>'+
+   '<label>Nome utente<input type="text" id="l-user" required autocomplete="username" autocapitalize="none"></label>'+
+   '<label>Password<input type="password" id="l-pw" required autocomplete="current-password"></label>'+
+   (ui.loginErr?'<p class="err">'+esc(ui.loginErr)+'</p>':'')+
+   '<div class="row"><span class="spacer"></span><button type="button" class="btn" data-act="closeLogin">Annulla</button><button class="btn primary" type="submit"'+(ui.busy?" disabled":"")+'>Entra</button></div></form></div>';
+}
+
+function render(){
+  var body=statusBox();
+  if(!body){
+    if(ui.view==="cronologia")body=viewChrono();
+    else if(ui.view==="regolamento")body=viewRules();
+    else if(ui.view==="gestione"&&ui.admin)body=viewAdmin();
+    else body=viewPlayers();
+  }else if(ui.view==="regolamento")body=viewRules();
+  // keep focus/values of an open form across a toast re-render
+  var keep=null,ae=document.activeElement;
+  if(ae&&ae.id&&root.contains(ae)&&/INPUT|SELECT/.test(ae.tagName))keep=ae.id;
+  var vals={};root.querySelectorAll("form input:not([type=checkbox]),form select").forEach(function(el){if(el.id)vals[el.id]=el.value});
+  var formBefore=root.querySelector("form.card");var formId=formBefore&&formBefore.id;
+  root.innerHTML=header()+'<main class="wrap">'+strip()+tabs()+body+'<footer>ASD GaN Milano · Le somme raccolte finanziano solo attività della squadra</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
+  var formAfter=root.querySelector("form.card");
+  if(formAfter&&formAfter.id===formId&&ui.keepForm){Object.keys(vals).forEach(function(id){var el=document.getElementById(id);if(el)el.value=vals[id]})}
+  ui.keepForm=false;
+  if(ui.login&&!keep){var u=$("#l-user");if(u)u.focus()}
+  if(keep){var k=document.getElementById(keep);if(k)k.focus()}
+}
+var toastT;
+function toast(m,bad){ui.toast=m;ui.toastBad=!!bad;ui.keepForm=!!bad;render();clearTimeout(toastT);toastT=setTimeout(function(){ui.toast="";ui.keepForm=true;render()},bad?6000:3500)}
+
+/* ---------- events ---------- */
+root.addEventListener("click",function(e){
+  var el=e.target.closest("[data-act]");if(!el||el.disabled)return;
+  var a=el.dataset.act,id=el.dataset.id,f=id?state.fines.filter(function(x){return x.id===id})[0]:null;
+  if(a==="closeLogin"){if(e.target!==el)return;ui.login=false;ui.loginErr="";render();return}
+  switch(a){
+    case"view":ui.view=el.dataset.v;ui.open=null;ls.set("gan-view",ui.view==="gestione"?null:ui.view);render();window.scrollTo({top:0});break;
+    case"toggle":ui.open=ui.open===el.dataset.p?null:el.dataset.p;render();break;
+    case"reload":ui.loading=true;render();load();break;
+    case"openLogin":ui.login=true;ui.loginErr="";render();break;
+    case"logout":sb.auth.signOut().finally(function(){ui.admin=false;if(ui.view==="gestione")ui.view="giocatori";render()});break;
+    case"atab":ui.atab=el.dataset.v;if(ui.atab!=="nuova")ui.editId=null;ui.confirmDel=null;ui.renameP=null;render();break;
+    case"edit":ui.editId=id;ui.atab="nuova";render();window.scrollTo({top:0});break;
+    case"cancelEdit":ui.editId=null;ui.atab="elenco";render();break;
+    case"askDel":ui.confirmDel=id;render();break;
+    case"noDel":ui.confirmDel=null;render();break;
+    case"del":ui.confirmDel=null;run(sb.from("multe").delete().eq("id",id),"Multa eliminata.");break;
+    case"paid":if(f)run(sb.from("multe").update({saldata:!f.paid,data_saldo:f.paid?null:today()}).eq("id",id),f.paid?"Segnata come non saldata.":"Multa saldata.");break;
+    case"double":if(f&&!f.doubled)run(sb.from("multe").update({importo:f.amount*2,raddoppiata:true}).eq("id",id),"Importo raddoppiato (art. 22).");break;
+    case"rename":ui.renameP=el.dataset.p;render();var r=$("#pl-rename");if(r)r.focus();break;
+    case"renameNo":ui.renameP=null;render();break;
+    case"renameOk":
+      var oldN=el.dataset.p,newN=clean($("#pl-rename").value);
+      if(!newN||newN===oldN){ui.renameP=null;render();break}
+      ui.renameP=null;run(sb.from("giocatori").update({nome:newN}).eq("nome",oldN),"Giocatore rinominato.");break;
+    case"rmPl":run(sb.from("giocatori").delete().eq("nome",el.dataset.p),"Giocatore rimosso.");break;
+  }
+});
+root.addEventListener("change",function(e){
+  var t=e.target;
+  if(t.id==="f-player"){ui.fPlayer=t.value;render()}
+  else if(t.id==="f-status"){ui.fStatus=t.value;render()}
+  else if(t.id==="f-pl"){var w=$("#f-newpl-wrap");w.hidden=t.value!=="__new";if(!w.hidden)$("#f-newpl").focus()}
+  else if(t.id==="f-rule"){
+    $("#f-custom-wrap").hidden=t.value!=="altro";
+    var r=RULES.filter(function(x){return String(x.c)===t.value})[0];
+    if(r)$("#f-amount").value=r.a;else $("#f-custom").focus();
+  }
+});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ui.login){ui.login=false;render()}});
+root.addEventListener("submit",function(e){
+  e.preventDefault();var id=e.target.id;
+  if(id==="login-form"){
+    var u=clean($("#l-user").value).toLowerCase(),p=$("#l-pw").value;
+    var email=u.indexOf("@")>=0?u:u+"@"+(CFG.ADMIN_DOMAIN||"multegan.app");
+    ui.busy=true;ui.loginErr="";render();
+    sb.auth.signInWithPassword({email:email,password:p}).then(function(r){
+      ui.busy=false;
+      if(r.error){ui.loginErr=/invalid/i.test(r.error.message)?"Nome utente o password non corretti.":"Accesso non riuscito: "+r.error.message;render();return}
+      ui.admin=true;ui.login=false;ui.view="gestione";render();
+    });
+  }
+  else if(id==="fine-form"){
+    var err=$("#f-err");var fail=function(m){err.textContent=m;err.hidden=false};
+    var pl=$("#f-pl").value,isNew=pl==="__new";
+    if(isNew){pl=clean($("#f-newpl").value);if(!pl)return fail("Scrivi il nome del nuovo giocatore.")}
+    if(!pl)return fail("Scegli un giocatore.");
+    var rv=$("#f-rule").value,code=null,reason;
+    if(rv==="altro"){reason=clean($("#f-custom").value);if(!reason)return fail("Scrivi la motivazione.")}
+    else{var r=RULES.filter(function(x){return String(x.c)===rv})[0];if(!r)return fail("Scegli una motivazione.");code=r.c;reason=r.t}
+    var amt=parseFloat($("#f-amount").value);if(!(amt>0))return fail("Inserisci un importo maggiore di zero.");
+    var date=$("#f-date").value||today(),paid=$("#f-paid").checked,note=clean($("#f-note").value)||null;
+    var row={giocatore:pl,articolo:code,motivazione:reason,importo:amt,data:date,nota:note,saldata:paid};
+    var editId=ui.editId;
+    if(editId){
+      var old=state.fines.filter(function(x){return x.id===editId})[0];
+      row.data_saldo=paid?(old&&old.paid?old.paidDate:today()):null;
+      run(ensurePlayer(pl).then(function(r){if(r&&r.error)throw r.error;return sb.from("multe").update(row).eq("id",editId)}),"Multa aggiornata.").then(function(ok){if(ok){ui.editId=null;ui.atab="elenco";render()}});
+    }else{
+      row.data_saldo=paid?today():null;
+      run(ensurePlayer(pl).then(function(r){if(r&&r.error)throw r.error;return sb.from("multe").insert(row)}),"Multa aggiunta a "+pl+".");
+    }
+  }
+  else if(id==="pl-form"){
+    var n=clean($("#pl-new").value);if(!n)return;
+    if(state.players.indexOf(n)>=0){toast("Questo giocatore è già in rosa.",true);return}
+    run(sb.from("giocatori").insert({nome:n}),n+" aggiunto alla rosa.");
+  }
+  else if(id==="pw-form"){
+    var p1=$("#c-pw").value,p2=$("#c-pw2").value,ce=$("#c-err");
+    if(p1.length<8){ce.textContent="La password deve avere almeno 8 caratteri.";ce.hidden=false;return}
+    if(p1!==p2){ce.textContent="Le due password non coincidono.";ce.hidden=false;return}
+    ui.busy=true;render();
+    sb.auth.updateUser({password:p1}).then(function(r){ui.busy=false;if(r.error)toast("Password non aggiornata: "+r.error.message,true);else toast("Password aggiornata.")});
+  }
+});
+
+/* ---------- start ---------- */
+render();
+if(sb){
+  sb.auth.getSession().then(function(r){if(r.data&&r.data.session){ui.admin=true;render()}});
+  sb.auth.onAuthStateChange(function(ev,session){var was=ui.admin;ui.admin=!!session;if(!ui.admin&&ui.view==="gestione")ui.view="giocatori";if(was!==ui.admin)render()});
+  load();
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&!ui.busy)load()});
+}
+})();
+</script>
+</body>
+</html>
