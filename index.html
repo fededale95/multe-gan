@@ -56,6 +56,14 @@ button{cursor:pointer}
 .stat.paid .v{color:var(--green-ink)} .stat.due .v{color:var(--orange-ink)}
 @media (max-width:700px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+.paybox{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;padding:14px 16px;border-radius:14px;background:var(--orange-soft);border:1.5px solid var(--orange)}
+.paybox .txt{flex:1 1 240px;min-width:0;font-size:14px}
+.paybox .txt b{display:block;font-family:var(--f-display);font-size:20px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+.paybtn{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:#1f1200;text-decoration:none;font-weight:700;border-radius:10px;padding:10px 16px;white-space:nowrap}
+.paybtn:hover{filter:brightness(1.05)}
+.paybtn svg{width:18px;height:18px}
+.paybtn.sm{padding:6px 12px;font-size:13px;border-radius:8px}
+.pdetail .payrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
 .tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:4px;margin:20px 0 14px;overflow-x:auto}
 .tab{flex:1;border:0;background:transparent;border-radius:9px;padding:9px 12px;font-weight:600;color:var(--muted);white-space:nowrap}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -275,6 +283,15 @@ function strip(){
    '<div class="stat"><div class="k">Infrazione top</div><div class="v num">'+(t.topReason?t.topReasonN+"×":"—")+'</div><div class="s" title="'+esc(t.topReason||"")+'">'+esc(t.topReason||"ancora nessuna")+'</div></div>'+
   '</section>';
 }
+var PAY_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>';
+function payLink(label,sm){
+  if(!CFG.SATISPAY_URL)return"";
+  return'<a class="paybtn'+(sm?" sm":"")+'" href="'+esc(CFG.SATISPAY_URL)+'" target="_blank" rel="noopener">'+PAY_ICON+esc(label)+'</a>';
+}
+function payBox(){
+  if(!CFG.SATISPAY_URL||ui.view==="gestione")return"";
+  return'<section class="paybox" aria-label="Pagamento multe"><div class="txt"><b>Paga la tua multa</b>Versa l’importo nella colletta Satispay della squadra e <strong>scrivi il tuo nome nel messaggio</strong>. Il capitano la segnerà come saldata.</div>'+payLink("Paga con Satispay")+'</section>';
+}
 function tabs(){
   var items=[["giocatori","Per giocatore"],["cronologia","Cronologia"],["regolamento","Regolamento"]];
   if(ui.admin)items.push(["gestione","Gestione"]);
@@ -306,7 +323,7 @@ function viewPlayers(){
       '<span style="min-width:0"><span class="pname">'+esc(p.name)+'</span><span class="pmeta">'+p.n+(p.n===1?" multa":" multe")+(top?'<span class="crown">Maglia nera</span>':'')+'</span>'+
       '<span class="bar" style="width:'+(max?Math.max(8,p.tot/max*100):8)+'%"><i class="p" style="width:'+paidW+'%"></i><i class="d" style="width:'+(100-paidW)+'%"></i></span></span>'+
       '<span class="ptot"><span class="v num">'+eur(p.tot)+'</span><br><span class="s'+(p.due?"":" ok")+'">'+(p.due?"da saldare "+eur(p.due):"tutto saldato")+'</span></span>'+
-    '</button>'+(open?'<div class="pdetail">'+sortFines(p.fines).map(function(f){return fineCard(f,false)}).join("")+'</div>':'')+'</div>';
+    '</button>'+(open?'<div class="pdetail">'+sortFines(p.fines).map(function(f){return fineCard(f,false)}).join("")+(p.due&&CFG.SATISPAY_URL?'<div class="payrow"><span>Da versare: <b class="num">'+eur(p.due)+'</b></span>'+payLink("Paga "+eur(p.due)+" con Satispay",true)+'</div>':'')+'</div>':'')+'</div>';
   }).join("")+'</div><p class="hint">Tocca un giocatore per vedere le sue multe. Barra verde = saldato, arancio = da saldare.</p>';
 }
 function viewChrono(){
@@ -411,7 +428,7 @@ function render(){
   if(ae&&ae.id&&root.contains(ae)&&/INPUT|SELECT/.test(ae.tagName))keep=ae.id;
   var vals={};root.querySelectorAll("form input:not([type=checkbox]),form select").forEach(function(el){if(el.id)vals[el.id]=el.value});
   var formBefore=root.querySelector("form.card");var formId=formBefore&&formBefore.id;
-  root.innerHTML=header()+'<main class="wrap">'+strip()+tabs()+body+'<footer>ASD GaN Milano · Le somme raccolte finanziano solo attività della squadra</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
+  root.innerHTML=header()+'<main class="wrap">'+strip()+payBox()+tabs()+body+'<footer>ASD GaN Milano · Le somme raccolte finanziano solo attività della squadra</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
   var formAfter=root.querySelector("form.card");
   if(formAfter&&formAfter.id===formId&&ui.keepForm){Object.keys(vals).forEach(function(id){var el=document.getElementById(id);if(el)el.value=vals[id]})}
   ui.keepForm=false;
