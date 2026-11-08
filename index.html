@@ -375,7 +375,7 @@ function fineForm(){
    '<label>Data<input type="date" id="f-date" required value="'+(f?f.date:today())+'"></label>'+
    '<label class="full">Motivazione<select id="f-rule" required><option value="" disabled'+(ruleSel?"":" selected")+'>Scegli dal regolamento…</option>'+RULES.map(function(r){return'<option value="'+r.c+'"'+(String(r.c)===ruleSel?" selected":"")+'>'+r.c+". "+esc(r.t)+" — "+eur(r.a)+'</option>'}).join("")+'<option value="altro"'+(ruleSel==="altro"?" selected":"")+'>Altro (scrivi la motivazione)</option></select></label>'+
    '<label class="full" id="f-custom-wrap"'+(ruleSel==="altro"?"":" hidden")+'>Motivazione personalizzata<input type="text" id="f-custom" maxlength="120" value="'+(f&&!f.code?esc(f.reason):"")+'"></label>'+
-   '<label>Importo (€)<input type="number" id="f-amount" min="0.5" step="0.5" required value="'+(f?f.amount:"")+'"></label>'+
+   '<label>Importo (€)<input type="number" id="f-amount" min="0.25" step="0.25" required value="'+(f?f.amount:"")+'"></label>'+
    '<label>Nota (facoltativa)<input type="text" id="f-note" maxlength="140" placeholder="Es. partita del sabato" value="'+(f?esc(f.note):"")+'"></label>'+
    '<label class="switch full"><input type="checkbox" id="f-paid"'+(f&&f.paid?" checked":"")+'> Saldata</label>'+
    '</div><p class="err" id="f-err" hidden></p><div class="row" style="margin-top:14px"><span class="spacer"></span>'+(f?'<button type="button" class="btn" data-act="cancelEdit">Annulla</button>':'')+'<button class="btn primary" type="submit"'+(ui.busy?" disabled":"")+'>'+(f?"Salva modifiche":"Aggiungi multa")+'</button></div></form>';
@@ -501,7 +501,7 @@ root.addEventListener("submit",function(e){
     var rv=$("#f-rule").value,code=null,reason;
     if(rv==="altro"){reason=clean($("#f-custom").value);if(!reason)return fail("Scrivi la motivazione.")}
     else{var r=RULES.filter(function(x){return String(x.c)===rv})[0];if(!r)return fail("Scegli una motivazione.");code=r.c;reason=r.t}
-    var amt=parseFloat($("#f-amount").value);if(!(amt>0))return fail("Inserisci un importo maggiore di zero.");
+    var amt=parseFloat($("#f-amount").value);if(!(amt>=0.25))return fail("L’importo minimo è 0,25 €.");
     var date=$("#f-date").value||today(),paid=$("#f-paid").checked,note=clean($("#f-note").value)||null;
     var row={giocatore:pl,articolo:code,motivazione:reason,importo:amt,data:date,nota:note,saldata:paid};
     var editId=ui.editId;
