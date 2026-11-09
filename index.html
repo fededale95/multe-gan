@@ -103,6 +103,18 @@ button{cursor:pointer}
 .tile .tl{font-size:14px;color:var(--muted);min-height:2.6em}
 .tile .tl b{color:var(--ink)}
 .tile .go{margin-top:auto;font-weight:700;color:var(--green-ink);font-size:14px}
+.install-btn{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border-radius:14px;background:var(--green);color:var(--on-green);box-shadow:var(--shadow);flex:0 0 auto}
+.install-btn:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.install-btn svg{width:26px;height:26px;flex:none}
+.install-btn b{display:block;font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1.05;text-transform:uppercase}
+.install-btn span{font-size:13px;opacity:.9}
+.home .install-btn{grid-column:1/-1}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:center;font-size:15px;color:var(--ink)}
+.steps li::before{counter-increment:st;content:counter(st);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--orange);color:#1f1200;font-weight:800;font-family:var(--f-display);font-size:18px}
+.steps .ico{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:var(--surface-2);vertical-align:middle;margin:0 2px}
+.steps .ico svg{width:18px;height:18px}
+.modal p.sub{margin:0;color:var(--muted);font-size:14px}
 .home-admin{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px;color:var(--muted)}
 .btn-back{border:0;background:rgba(255,255,255,.14);color:var(--band-ink);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
 .btn-back:hover{background:rgba(255,255,255,.24)}
@@ -502,6 +514,33 @@ var ICONS={
   calendario:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="16" r="2.5"/></svg>',
   certificati:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></svg>'
 };
+/* ---------- install button (phones, in the browser only) ---------- */
+var installEvt=null,installedNow=false;
+var UA=navigator.userAgent||"";
+var isIOS=/iphone|ipad|ipod/i.test(UA)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+var isAndroid=/android/i.test(UA);
+var isIOSChrome=isIOS&&/CriOS/i.test(UA);
+function isStandalone(){try{return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(e){return false}}
+// Android: only when Chrome says the app can be installed (it does not when it is already installed).
+// iPhone: there is no install API, so the button opens the step-by-step instructions.
+function showInstall(){return!isStandalone()&&!installedNow&&((isAndroid&&!!installEvt)||isIOS)}
+var DL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12M7 10l5 5 5-5"/><rect x="4" y="17" width="16" height="4" rx="1.5"/></svg>';
+var SHARE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+var PLUS_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+function installButton(){
+  if(!showInstall())return"";
+  return'<button class="install-btn" data-act="install">'+DL_ICON+'<div><b>Installa app</b><span>'+(isIOS?"Aggiungi GAN Open C1 alla schermata Home":"Aggiungi GAN Open C1 al telefono, come un’app")+'</span></div></button>';
+}
+function iosModal(){
+  if(!ui.iosHelp)return"";
+  var where=isIOSChrome?"accanto alla barra dell’indirizzo, in alto":"in basso al centro";
+  return'<div class="overlay" data-act="closeIos"><div class="modal" role="dialog" aria-label="Installa su iPhone"><h2>Installa su iPhone</h2>'+
+    '<p class="sub">Apple non permette ai siti di installarsi da soli: bastano tre tocchi.</p>'+
+    '<ol class="steps"><li><span>Tocca <span class="ico">'+SHARE_ICON+'</span> <b>Condividi</b>, '+where+'.</span></li>'+
+    '<li><span>Scorri e tocca <span class="ico">'+PLUS_ICON+'</span> <b>Aggiungi alla schermata Home</b>.</span></li>'+
+    '<li><span>Tocca <b>Aggiungi</b> in alto a destra. L’icona GAN Open C1 compare sulla Home.</span></li></ol>'+
+    '<div class="row"><span class="spacer"></span><button class="btn primary" data-act="closeIos">Ho capito</button></div></div></div>';
+}
 function viewHome(){
   var wait=ui.loading?"Caricamento…":"";
   var t=totals(),multeL=wait||(ui.loadErr?"Dati non disponibili":(t.due?'<b class="num">'+eur(t.due)+'</b> da incassare · '+t.n+(t.n===1?" multa":" multe"):(t.n?"Tutto saldato · "+t.n+(t.n===1?" multa":" multe"):"Nessuna multa registrata")));
@@ -512,7 +551,7 @@ function viewHome(){
   var ng=nextGame(),calL=wait||(ui.calErr?"Calendario non disponibile":(!state.gare.length?"Nessuna gara inserita":(ng?'Prossima: <b>'+fmtD(ng.data).replace(/ \d{4}$/,"")+'</b> · '+(ng.casa?"in casa con ":"in trasferta a ")+esc(ng.avversario):"Stagione conclusa")));
   function tile(s,cls,label,line,extra){return'<div class="tile '+cls+'" role="button" tabindex="0" data-act="go" data-s="'+s+'"><span class="ic">'+ICONS[s]+'</span><span class="tt">'+label+'</span><span class="tl">'+line+'</span>'+(extra||'')+'<span class="go">Apri →</span></div>'}
   var calMaps=!wait&&ng&&ng.indirizzo?'<span class="tmap"><a class="mapbtn big" href="'+mapsUrl(ng)+'" target="_blank" rel="noopener">'+PIN+'Apri in Maps · '+(ng.casa?'campo di casa':esc(ng.campo||ng.avversario))+'</a></span>':'';
-  return'<nav class="home" aria-label="Sezioni">'+tile("calendario","cal","Calendario gare",calL,calMaps)+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+'</nav>'+
+  return'<nav class="home" aria-label="Sezioni">'+installButton()+tile("calendario","cal","Calendario gare",calL,calMaps)+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+'</nav>'+
     (ui.admin?'<div class="home-admin">Sei entrato come admin.<button class="btn sm" data-act="go" data-s="account">Cambia password</button></div>':'');
 }
 function strip(){
@@ -845,7 +884,7 @@ function render(){
   if(ae&&ae.id&&root.contains(ae)&&/INPUT|SELECT/.test(ae.tagName))keep=ae.id;
   var vals={};root.querySelectorAll("form input:not([type=checkbox]),form select").forEach(function(el){if(el.id)vals[el.id]=el.value});
   var formBefore=root.querySelector("form.card");var formId=formBefore&&formBefore.id;
-  root.innerHTML=header()+'<main class="wrap'+(s==="home"?" home-main":"")+'">'+(s==="multe"&&!mg?strip()+payBox():'')+(s==="home"?'':tabs())+body+'<footer>ASD GaN Milano'+(s==="multe"?' · Le somme raccolte finanziano solo attività della squadra':'')+'</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
+  root.innerHTML=header()+'<main class="wrap'+(s==="home"?" home-main":"")+'">'+(s==="multe"&&!mg?strip()+payBox():'')+(s==="home"?'':tabs())+body+'<footer>ASD GaN Milano'+(s==="multe"?' · Le somme raccolte finanziano solo attività della squadra':'')+'</footer></main>'+loginModal()+iosModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
   var formAfter=root.querySelector("form.card");
   if(formAfter&&formAfter.id===formId&&ui.keepForm){Object.keys(vals).forEach(function(id){var el=document.getElementById(id);if(el)el.value=vals[id]})}
   ui.keepForm=false;
@@ -861,6 +900,12 @@ root.addEventListener("click",function(e){
   var el=e.target.closest("[data-act]");if(!el||el.disabled)return;
   var a=el.dataset.act,id=el.dataset.id,f=id?state.fines.filter(function(x){return x.id===id})[0]:null;
   if(a==="closeLogin"){if(e.target!==el)return;ui.login=false;ui.loginErr="";render();return}
+  if(a==="closeIos"){if(e.target!==el&&!el.classList.contains("btn"))return;ui.iosHelp=false;render();return}
+  if(a==="install"){
+    if(installEvt){var ev=installEvt;installEvt=null;ev.prompt();ev.userChoice.then(function(c){if(c&&c.outcome==="accepted"){installedNow=true;toast("App installata: la trovi tra le app del telefono.")}else render()}).catch(function(){render()})}
+    else if(isIOS){ui.iosHelp=true;render()}
+    return;
+  }
   switch(a){
     case"go":go(el.dataset.s);break;
     case"view":ui.view=el.dataset.v;ui.open=null;if(ui.view!=="gestione")ls.set("gan-view-"+ui.section,ui.view);render();window.scrollTo({top:0});break;
@@ -961,7 +1006,7 @@ root.addEventListener("change",function(e){
   }
 });
 document.addEventListener("keydown",function(e){
-  if(e.key==="Escape"&&ui.login){ui.login=false;render();return}
+  if(e.key==="Escape"&&(ui.login||ui.iosHelp)){ui.login=false;ui.iosHelp=false;render();return}
   // keyboard access for the home tiles
   if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("tile")){e.preventDefault();e.target.click()}
 });
@@ -1036,6 +1081,8 @@ root.addEventListener("submit",function(e){
 /* ---------- start ---------- */
 if("serviceWorker" in navigator&&location.protocol!=="file:"){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
 window.addEventListener("hashchange",function(){readHash();render();window.scrollTo({top:0})});
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();installEvt=e;if(ui.section==="home")render()});
+window.addEventListener("appinstalled",function(){installEvt=null;installedNow=true;if(ui.section==="home")render()});
 render();
 if(sb){
   sb.auth.getSession().then(function(r){if(r.data&&r.data.session){ui.admin=true;render()}});
