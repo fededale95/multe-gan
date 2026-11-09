@@ -40,7 +40,7 @@ button{cursor:pointer}
 :focus-visible{outline:3px solid var(--orange);outline-offset:2px}
 .num{font-variant-numeric:tabular-nums}
 
-.band{background:var(--band);color:var(--band-ink);border-bottom:5px solid var(--orange)}
+.band{background:var(--band);color:var(--band-ink);border-bottom:5px solid var(--orange);position:sticky;top:env(safe-area-inset-top,0px);z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 .band .wrap{display:flex;align-items:center;gap:14px;padding-block:14px}
 .logo{width:58px;height:58px;border-radius:50%;background:#fff;padding:2px;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 .brand{min-width:0;flex:1}
@@ -274,6 +274,9 @@ label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;
 .skeleton{height:64px;border-radius:12px;background:var(--surface-2);animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.5}}
 main{padding-bottom:80px}
+#root{min-height:calc(100dvh - env(safe-area-inset-top,0px));display:flex;flex-direction:column}
+#root > main{flex:1 0 auto;width:100%}
+@media (max-width:760px){main.home-main{display:flex;flex-direction:column;padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}main.home-main .home{flex:1;display:flex;flex-direction:column;padding-bottom:4px}main.home-main .home .tile{flex:1 1 auto}main.home-main .home .tile{align-content:center}main.home-main footer{display:none}main.home-main .home{min-height:0}}
 footer{margin-top:28px;font-size:12.5px;color:var(--muted);text-align:center}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -842,7 +845,7 @@ function render(){
   if(ae&&ae.id&&root.contains(ae)&&/INPUT|SELECT/.test(ae.tagName))keep=ae.id;
   var vals={};root.querySelectorAll("form input:not([type=checkbox]),form select").forEach(function(el){if(el.id)vals[el.id]=el.value});
   var formBefore=root.querySelector("form.card");var formId=formBefore&&formBefore.id;
-  root.innerHTML=header()+'<main class="wrap">'+(s==="multe"&&!mg?strip()+payBox():'')+(s==="home"?'':tabs())+body+'<footer>ASD GaN Milano'+(s==="multe"?' · Le somme raccolte finanziano solo attività della squadra':'')+'</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
+  root.innerHTML=header()+'<main class="wrap'+(s==="home"?" home-main":"")+'">'+(s==="multe"&&!mg?strip()+payBox():'')+(s==="home"?'':tabs())+body+'<footer>ASD GaN Milano'+(s==="multe"?' · Le somme raccolte finanziano solo attività della squadra':'')+'</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
   var formAfter=root.querySelector("form.card");
   if(formAfter&&formAfter.id===formId&&ui.keepForm){Object.keys(vals).forEach(function(id){var el=document.getElementById(id);if(el)el.value=vals[id]})}
   ui.keepForm=false;
