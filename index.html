@@ -263,15 +263,19 @@ function loadSp(){
 }
 // who cleans next: the first two people in the queue who are not absent.
 // Absent people keep their place at the front and clean the following time.
+// Absent people (in the order they were marked) leave the next pair and slot in right after it:
+// the first one marked goes to position 3, the second to position 4, and so on.
+// The people behind them move up, so the pair is always the first two of the resulting order.
 function spPlan(){
-  var coda=state.sp.coda,ass=state.sp.assenti,cur=[];
-  coda.forEach(function(n){if(cur.length<2&&ass.indexOf(n)<0)cur.push(n)});
-  var rest=coda.filter(function(n){return cur.indexOf(n)<0}),newCoda=rest.concat(cur),next=[];
+  var coda=state.sp.coda,absent=state.sp.assenti.filter(function(n){return coda.indexOf(n)>=0});
+  var base=coda.filter(function(n){return absent.indexOf(n)<0});
+  var order=base.slice(0,2).concat(absent,base.slice(2));
+  var cur=order.slice(0,2),newCoda=order.slice(2).concat(cur),next=[];
   // simulate the following turns the same way "Pulizia fatta" does (first two go to the back),
   // so with an odd number of people the pairs shift by one each round and nobody cleans alone
   var q=newCoda.slice(),turns=Math.ceil(coda.length/2)-1;
   for(var i=0;i<turns&&q.length>=2;i++){var p=q.slice(0,2);next.push(p);q=q.slice(2).concat(p)}
-  return{cur:cur,next:next,newCoda:newCoda,absent:ass.filter(function(n){return coda.indexOf(n)>=0})};
+  return{cur:cur,next:next,newCoda:newCoda,absent:absent,order:order};
 }
 function spSave(coda,assenti,msg){
   return run(sb.from("spogliatoi_stato").update({coda:coda,assenti:assenti,updated_at:new Date().toISOString()}).eq("id",1),msg);
@@ -418,23 +422,23 @@ function viewSp(){
 /* ---------- admin ---------- */
 function adminSp(){
   if(ui.spErr)return spUnavailable()+'<p class="hint">Se non l’hai ancora fatto, esegui lo script degli spogliatoi nell’SQL Editor di Supabase.</p>';
-  var pl=spPlan(),sp=state.sp,dis=ui.busy?" disabled":"";
+  var pl=spPlan(),sp=state.sp,dis=ui.busy?" disabled":"",lockMove=pl.absent.length>0;
   var h='<div class="card"><h2>Prossima pulizia</h2><div class="who sm">'+(pl.cur.length?pairNames(pl.cur):"Nessuno disponibile")+'</div>'+
-    (pl.absent.length?'<p class="hint">Assenti: '+pl.absent.map(esc).join(", ")+' (restano in testa e puliscono la prossima volta)</p>':'<p class="hint">Segna gli assenti nella fila qui sotto prima di confermare.</p>')+
+    (pl.absent.length?'<p class="hint">Assenti: '+pl.absent.map(esc).join(", ")+' (scalano subito dopo la coppia e puliscono la volta successiva)</p>':'<p class="hint">Se uno dei due manca, premi “Segna assente” accanto al suo nome qui sotto: lo sostituisce il successivo in lista.</p>')+
     '<div class="row" style="margin-top:12px"><button class="btn primary" data-act="spDone"'+(pl.cur.length?dis:" disabled")+'>Pulizia fatta</button>'+
     (state.spHist.length?'<button class="btn" data-act="spUndo"'+dis+'>Annulla ultima pulizia</button>':'')+'</div></div>';
   h+='<form class="card" id="sp-form" autocomplete="off" style="margin-top:16px"><h2>Fila ('+sp.coda.length+')</h2>'+
     '<div class="row"><input type="text" id="sp-new" maxlength="40" placeholder="Cognome" style="flex:1 1 200px" aria-label="Nome da aggiungere in fondo alla fila"><button class="btn primary" type="submit"'+dis+'>Aggiungi in fondo</button></div>'+
-    '<div style="margin-top:8px">'+sp.coda.map(function(n,i){
+    '<div style="margin-top:8px">'+pl.order.map(function(n,i){
       var ab=sp.assenti.indexOf(n)>=0,isCur=pl.cur.indexOf(n)>=0;
       if(ui.spRename===n)return'<div class="afine"><input type="text" id="sp-rename" maxlength="40" value="'+esc(n)+'" aria-label="Nuovo nome"><div class="acts"><button type="button" class="btn sm primary" data-act="spRenameOk" data-p="'+esc(n)+'"'+dis+'>Salva nome</button><button type="button" class="btn sm" data-act="spRenameNo">Annulla</button></div></div>';
       var rm=ui.spConfirmRm===n
         ?'<span class="muted" style="font-size:13px">Togliere?</span><button type="button" class="btn sm danger" data-act="spRm" data-p="'+esc(n)+'"'+dis+'>Sì</button><button type="button" class="btn sm" data-act="spRmNo">No</button>'
         :'<button type="button" class="btn sm" data-act="spRename" data-p="'+esc(n)+'">Rinomina</button><button type="button" class="btn sm" data-act="spAskRm" data-p="'+esc(n)+'">Togli</button>';
       return'<div class="afine"><div style="min-width:0"><span class="tn sm num">'+(i+1)+'</span> <b>'+esc(n)+'</b>'+(isCur?' <span class="pill ok">Prossimo</span>':'')+(ab?' <span class="pill late">Assente</span>':'')+'</div>'+
-        '<div class="acts"><button type="button" class="btn sm '+(ab?"accent":"")+'" data-act="spAbs" data-p="'+esc(n)+'"'+dis+'>'+(ab?"Segna presente":"Segna assente")+'</button>'+
-        '<button type="button" class="btn sm" data-act="spUp" data-p="'+esc(n)+'" aria-label="Sposta su"'+(i===0?" disabled":dis)+'>↑</button><button type="button" class="btn sm" data-act="spDown" data-p="'+esc(n)+'" aria-label="Sposta giù"'+(i===sp.coda.length-1?" disabled":dis)+'>↓</button>'+rm+'</div></div>';
-    }).join("")+'</div><p class="hint">Puliscono sempre i primi due presenti della fila. Dopo “Pulizia fatta” chi ha pulito va in fondo e le assenze si azzerano; con un numero dispari le coppie scorrono da sole.</p></form>';
+        '<div class="acts">'+(isCur||ab?'<button type="button" class="btn sm '+(ab?"accent":"")+'" data-act="spAbs" data-p="'+esc(n)+'"'+dis+'>'+(ab?"Segna presente":"Segna assente")+'</button>':'')+
+        '<button type="button" class="btn sm" data-act="spUp" data-p="'+esc(n)+'" aria-label="Sposta su"'+(i===0||lockMove?" disabled":dis)+'>↑</button><button type="button" class="btn sm" data-act="spDown" data-p="'+esc(n)+'" aria-label="Sposta giù"'+(i===pl.order.length-1||lockMove?" disabled":dis)+'>↓</button>'+rm+'</div></div>';
+    }).join("")+'</div><p class="hint">Puliscono i primi due della fila. Chi viene segnato assente scala subito dopo la coppia (3° posto, poi 4° se ce n’è un altro) e pulisce la volta successiva. Dopo “Pulizia fatta” chi ha pulito va in fondo.'+(lockMove?' Per spostare le persone con le frecce, prima conferma la pulizia o segna di nuovo presenti gli assenti.':'')+'</p></form>';
   h+='<div class="card" style="margin-top:16px"><h2>Storico</h2>'+(state.spHist.length?state.spHist.map(function(r){
     return'<div class="afine"><div style="min-width:0"><b>'+fmtD(r.data)+'</b> · '+(r.puliti||[]).map(esc).join(" & ")+((r.assenti||[]).length?'<div class="fwhy">Assenti: '+r.assenti.map(esc).join(", ")+'</div>':'')+'</div></div>';
   }).join(""):'<p class="hint">Nessuna pulizia registrata.</p>')+'</div>';
