@@ -91,6 +91,8 @@ button{cursor:pointer}
 .tile.cert{border-top-color:var(--danger)}
 .tile.cal{border-top-color:var(--band)}
 .tile.cal .ic{background:var(--surface-2);color:var(--ink)}
+.tile .tmap{display:block}
+.home .tile .tmap{flex-basis:100%}
 .tile .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--ok-soft);color:var(--green-ink)}
 .tile.sp .ic{background:var(--orange-soft);color:var(--orange-ink)}
 .tile.cert .ic{background:var(--danger-soft);color:var(--danger)}
@@ -503,8 +505,9 @@ function viewHome(){
   var n=certCounts(),certL=wait||(ui.certErr?"Certificati non disponibili":(!state.cert.length?"Nessun giocatore inserito":
     (n.late||n.soon||n.none?[n.late?'<b>'+n.late+'</b> scadut'+(n.late===1?"o":"i"):"",n.soon?'<b>'+n.soon+'</b> in scadenza':"",n.none?'<b>'+n.none+'</b> mancant'+(n.none===1?"e":"i"):""].filter(Boolean).join(" · "):"Tutti validi")));
   var ng=nextGame(),calL=wait||(ui.calErr?"Calendario non disponibile":(!state.gare.length?"Nessuna gara inserita":(ng?'Prossima: <b>'+fmtD(ng.data).replace(/ \d{4}$/,"")+'</b> · '+(ng.casa?"in casa con ":"in trasferta a ")+esc(ng.avversario):"Stagione conclusa")));
-  function tile(s,cls,label,line){return'<button class="tile '+cls+'" data-act="go" data-s="'+s+'"><span class="ic">'+ICONS[s]+'</span><span class="tt">'+label+'</span><span class="tl">'+line+'</span><span class="go">Apri →</span></button>'}
-  return'<nav class="home" aria-label="Sezioni">'+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+tile("calendario","cal","Calendario gare",calL)+'</nav>'+
+  function tile(s,cls,label,line,extra){return'<div class="tile '+cls+'" role="button" tabindex="0" data-act="go" data-s="'+s+'"><span class="ic">'+ICONS[s]+'</span><span class="tt">'+label+'</span><span class="tl">'+line+'</span>'+(extra||'')+'<span class="go">Apri →</span></div>'}
+  var calMaps=!wait&&ng&&ng.indirizzo?'<span class="tmap"><a class="mapbtn sm" href="'+mapsUrl(ng)+'" target="_blank" rel="noopener">'+PIN+'Maps '+(ng.casa?'campo di casa':esc(ng.campo||ng.avversario))+'</a></span>':'';
+  return'<nav class="home" aria-label="Sezioni">'+tile("calendario","cal","Calendario gare",calL,calMaps)+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+'</nav>'+
     (ui.admin?'<div class="home-admin">Sei entrato come admin.<button class="btn sm" data-act="go" data-s="account">Cambia password</button></div>':'');
 }
 function strip(){
@@ -849,6 +852,7 @@ function toast(m,bad){ui.toast=m;ui.toastBad=!!bad;ui.keepForm=!!bad;render();cl
 
 /* ---------- events ---------- */
 root.addEventListener("click",function(e){
+  if(e.target.closest("a[href]"))return;
   var el=e.target.closest("[data-act]");if(!el||el.disabled)return;
   var a=el.dataset.act,id=el.dataset.id,f=id?state.fines.filter(function(x){return x.id===id})[0]:null;
   if(a==="closeLogin"){if(e.target!==el)return;ui.login=false;ui.loginErr="";render();return}
@@ -951,7 +955,11 @@ root.addEventListener("change",function(e){
     if(r)$("#f-amount").value=r.a;else $("#f-custom").focus();
   }
 });
-document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ui.login){ui.login=false;render()}});
+document.addEventListener("keydown",function(e){
+  if(e.key==="Escape"&&ui.login){ui.login=false;render();return}
+  // keyboard access for the home tiles
+  if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("tile")){e.preventDefault();e.target.click()}
+});
 root.addEventListener("submit",function(e){
   e.preventDefault();var id=e.target.id;
   if(id==="login-form"){
