@@ -82,13 +82,15 @@ button{cursor:pointer}
 .tn{font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--muted);min-width:24px;text-align:center}
 .tn.sm{font-size:16px;min-width:20px;display:inline-block}
 /* home */
-.home{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}
-@media (max-width:760px){.home{grid-template-columns:minmax(0,1fr)}}
+.home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
+@media (max-width:760px){.home{grid-template-columns:minmax(0,1fr);gap:10px;margin-top:16px}.home .tile{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:14px 16px}.home .tile .tt{font-size:24px}.home .tile .tl{flex-basis:100%;min-height:0}.home .tile .go{display:none}.home .tile .ic{width:40px;height:40px}}
 .tile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);border-top:6px solid var(--green);min-width:0;transition:transform .12s}
 .tile:hover{transform:translateY(-2px)}
 .tile:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
 .tile.sp{border-top-color:var(--orange)}
 .tile.cert{border-top-color:var(--danger)}
+.tile.cal{border-top-color:var(--band)}
+.tile.cal .ic{background:var(--surface-2);color:var(--ink)}
 .tile .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--ok-soft);color:var(--green-ink)}
 .tile.sp .ic{background:var(--orange-soft);color:var(--orange-ink)}
 .tile.cert .ic{background:var(--danger-soft);color:var(--danger)}
@@ -101,6 +103,35 @@ button{cursor:pointer}
 .btn-back{border:0;background:rgba(255,255,255,.14);color:var(--band-ink);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
 .btn-back:hover{background:rgba(255,255,255,.24)}
 .btn-back svg{width:20px;height:20px}
+
+/* calendar */
+.match-hero{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);border-left:6px solid var(--orange);margin-top:14px}
+.match-hero .k{font-size:12px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;color:var(--muted)}
+.match-hero .when{font-family:var(--f-display);font-weight:700;font-size:22px;text-transform:uppercase;margin-top:2px}
+.vs{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,7vw,38px);line-height:1.05;text-transform:uppercase;margin:6px 0;overflow-wrap:anywhere}
+.vs .us{color:var(--green-ink)} .vs .sep{color:var(--orange);margin:0 .2em}
+.place{font-size:14px;color:var(--muted);margin-top:6px}
+.place b{color:var(--ink)}
+.mapbtn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:var(--band);color:var(--band-ink);text-decoration:none;font-weight:700;border-radius:10px;padding:8px 14px;font-size:14px}
+.mapbtn svg{width:16px;height:16px}
+.mapbtn.sm{margin:0;padding:3px 9px;font-size:12px;border-radius:8px}
+.mapbtn.sm svg{width:13px;height:13px}
+.rec{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:14px}
+.rec div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.rec b{display:block;font-family:var(--f-display);font-size:24px;color:var(--ink);letter-spacing:0}
+@media (max-width:480px){.rec{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.game{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.game.past{opacity:.78}
+.game.next{border:2px solid var(--orange)}
+.game .gt{font-weight:700;overflow-wrap:anywhere}
+.game .gt .us,.afine .us{color:var(--green-ink)}
+.game .gm{font-size:13px;color:var(--muted);display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;margin-top:2px}
+.game .gr{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.score{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1}
+.pill.home{background:var(--ok-soft);color:var(--green-ink)} .pill.away{background:var(--surface-2);color:var(--muted)}
+.pill.win{background:var(--ok-soft);color:var(--green-ink)} .pill.draw{background:var(--orange-soft);color:var(--orange-ink)} .pill.loss{background:var(--danger-soft);color:var(--danger)}
+.resin{display:flex;gap:6px;align-items:center}
+.resin input{width:60px;padding:6px 8px;text-align:center}
 
 /* certificates */
 .cstats{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
@@ -259,11 +290,11 @@ var ls={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}
 var configured=CFG.SUPABASE_URL&&CFG.SUPABASE_URL.indexOf("INSERISCI")<0&&CFG.SUPABASE_ANON_KEY&&CFG.SUPABASE_ANON_KEY.indexOf("INSERISCI")<0&&window.supabase;
 var sb=configured?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):null;
 
-var state={players:[],fines:[],sp:{coda:[],assenti:[]},spHist:[],cert:[]};
-var ui={section:"home",view:"",admin:false,atab:"nuova",spRename:null,spConfirmRm:null,spErr:"",certErr:"",certConfirmRm:null,fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
+var state={players:[],fines:[],sp:{coda:[],assenti:[]},spHist:[],cert:[],gare:[]};
+var ui={section:"home",view:"",admin:false,atab:"nuova",calErr:"",calEdit:null,calConfirmRm:null,calAll:false,spRename:null,spConfirmRm:null,spErr:"",certErr:"",certConfirmRm:null,fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
 // sections live in the URL hash (#multe, #spogliatoi, #certificati, #account) so the phone's back button returns home
-var SECTIONS={multe:["giocatori","cronologia","regolamento"],spogliatoi:["turni"],certificati:["elenco"],account:["password"]};
-var TITLES={multe:"Multe",spogliatoi:"Spogliatoi",certificati:"Certificati",account:"Account"};
+var SECTIONS={multe:["giocatori","cronologia","regolamento"],spogliatoi:["turni"],certificati:["elenco"],calendario:["gare"],account:["password"]};
+var TITLES={multe:"Multe",spogliatoi:"Spogliatoi",certificati:"Certificati",calendario:"Calendario",account:"Account"};
 function readHash(){
   var h=(location.hash||"").replace("#","");
   ui.section=SECTIONS[h]&&(h!=="account"||ui.admin)?h:"home";
@@ -291,7 +322,8 @@ function load(){
     sb.from("giocatori").select("nome").order("nome"),
     sb.from("multe").select("*").order("data",{ascending:false}),
     loadSp(),
-    loadCert()
+    loadCert(),
+    loadGare()
   ]).then(function(res){
     if(res[0].error)throw res[0].error;if(res[1].error)throw res[1].error;
     state.players=res[0].data.map(function(r){return r.nome});
@@ -329,6 +361,24 @@ function certSorted(){
     return rank[a.s.k]-rank[b.s.k]||((a.s.days==null?0:a.s.days)-(b.s.days==null?0:b.s.days))||a.c.nome.localeCompare(b.c.nome,"it");
   });
 }
+function loadGare(){
+  return sb.from("gare").select("*").order("data").order("ora").then(function(r){
+    if(r.error)throw r.error;state.gare=r.data||[];ui.calErr="";
+  }).catch(function(e){ui.calErr=(e&&e.message)||"errore di rete"});
+}
+var DAYS=["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
+function hasRes(g){return g.gol_gan!=null&&g.gol_avv!=null}
+function resKind(g){return!hasRes(g)?null:g.gol_gan>g.gol_avv?"win":g.gol_gan<g.gol_avv?"loss":"draw"}
+function nextGame(){var t=today();return state.gare.filter(function(g){return g.data>=t&&!hasRes(g)})[0]||null}
+function gameRecord(){
+  var r={g:0,v:0,n:0,p:0,gf:0,gs:0};
+  state.gare.forEach(function(g){if(!hasRes(g))return;r.g++;r.gf+=g.gol_gan;r.gs+=g.gol_avv;var k=resKind(g);if(k==="win")r.v++;else if(k==="draw")r.n++;else r.p++});
+  r.pt=r.v*3+r.n;return r;
+}
+function mapsUrl(g){return"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent([g.campo,g.indirizzo].filter(Boolean).join(", "))}
+var PIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+function matchTitle(g){var us='<span class="us">GAN</span>',them=esc(g.avversario);return g.casa?us+' – '+them:them+' – '+us}
+function addDays(s,n){var d=parseD(s);d.setDate(d.getDate()+n);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function certCounts(){var n={ok:0,soon:0,late:0,none:0};state.cert.forEach(function(c){n[certStatus(c).k]++});return n}
 // Absent people (in the order they were marked) leave the next pair and slot in right after it:
 // the first one marked goes to position 3, the second to position 4, and so on.
@@ -394,6 +444,7 @@ function header(){
 var ICONS={
   multe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
   spogliatoi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16"/><path d="M12 3v18M2 21h20M9 11v2M15 11v2"/></svg>',
+  calendario:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="16" r="2.5"/></svg>',
   certificati:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></svg>'
 };
 function viewHome(){
@@ -403,8 +454,9 @@ function viewHome(){
   var spL=wait||(ui.spErr?"Turni non disponibili":(pl&&pl.cur.length?'Prossima pulizia: <b>'+pl.cur.map(esc).join(" &amp; ")+'</b>':"Nessun turno inserito"));
   var n=certCounts(),certL=wait||(ui.certErr?"Certificati non disponibili":(!state.cert.length?"Nessun giocatore inserito":
     (n.late||n.soon||n.none?[n.late?'<b>'+n.late+'</b> scadut'+(n.late===1?"o":"i"):"",n.soon?'<b>'+n.soon+'</b> in scadenza':"",n.none?'<b>'+n.none+'</b> mancant'+(n.none===1?"e":"i"):""].filter(Boolean).join(" · "):"Tutti validi")));
+  var ng=nextGame(),calL=wait||(ui.calErr?"Calendario non disponibile":(!state.gare.length?"Nessuna gara inserita":(ng?'Prossima: <b>'+fmtD(ng.data).replace(/ \d{4}$/,"")+'</b> · '+(ng.casa?"in casa con ":"in trasferta a ")+esc(ng.avversario):"Stagione conclusa")));
   function tile(s,cls,label,line){return'<button class="tile '+cls+'" data-act="go" data-s="'+s+'"><span class="ic">'+ICONS[s]+'</span><span class="tt">'+label+'</span><span class="tl">'+line+'</span><span class="go">Apri →</span></button>'}
-  return'<nav class="home" aria-label="Sezioni">'+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+'</nav>'+
+  return'<nav class="home" aria-label="Sezioni">'+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+tile("calendario","cal","Calendario gare",calL)+'</nav>'+
     (ui.admin?'<div class="home-admin">Sei entrato come admin.<button class="btn sm" data-act="go" data-s="account">Cambia password</button></div>':'');
 }
 function strip(){
@@ -426,7 +478,7 @@ function payBox(){
   return'<section class="paybox" aria-label="Pagamento multe"><div class="txt"><b>Paga la tua multa</b>Versa l’importo nella colletta Satispay della squadra e <strong>scrivi il tuo nome nel messaggio</strong>. Il capitano la segnerà come saldata.</div>'+payLink("Paga con Satispay")+'</section>';
 }
 function tabs(){
-  var LABELS={multe:[["giocatori","Per giocatore"],["cronologia","Cronologia"],["regolamento","Regolamento"]],spogliatoi:[["turni","Turni"]],certificati:[["elenco","Elenco"]]};
+  var LABELS={multe:[["giocatori","Per giocatore"],["cronologia","Cronologia"],["regolamento","Regolamento"]],spogliatoi:[["turni","Turni"]],certificati:[["elenco","Elenco"]],calendario:[["gare","Gare"]]};
   var items=(LABELS[ui.section]||[]).slice();
   if(ui.admin&&LABELS[ui.section])items.push(["gestione","Gestione"]);
   if(items.length<2)return'<div style="height:14px"></div>';
@@ -532,6 +584,71 @@ function adminSp(){
   }).join(""):'<p class="hint">Nessuna pulizia registrata.</p>')+'</div>';
   return h;
 }
+/* ---------- calendar ---------- */
+function calUnavailable(){return'<div class="empty"><strong>Calendario non disponibile</strong>Non riesco a leggere le gare ('+esc(ui.calErr)+').</div>'}
+function longDate(g){var d=parseD(g.data);return DAYS[d.getDay()]+" "+d.getDate()+" "+MONTHS_L[d.getMonth()].toLowerCase()+" · ore "+esc(g.ora)}
+function resPill(g){var k=resKind(g);return k?'<span class="pill '+k+'">'+(k==="win"?"Vinta":k==="draw"?"Pari":"Persa")+'</span>':''}
+function phaseLabel(g){return g.giornata?g.giornata+"ª "+(g.fase==="andata"||g.fase==="ritorno"?g.fase:esc(g.fase)):esc(g.fase)}
+function gameRow(g,next){
+  var d=parseD(g.data),past=g.data<today();
+  var right=hasRes(g)?'<span class="score num">'+g.gol_gan+'–'+g.gol_avv+'</span>'+resPill(g)
+    :(past?'<span class="pill none">Risultato da inserire</span>':'<span class="num" style="font-weight:700">'+esc(g.ora)+'</span>');
+  return'<div class="game'+(next?" next":"")+(past?" past":"")+'"><div class="date"><div class="d num">'+d.getDate()+'</div><div class="m">'+MONTHS[d.getMonth()]+'</div></div>'+
+    '<div style="min-width:0"><div class="gt">'+matchTitle(g)+'</div><div class="gm"><span>'+phaseLabel(g)+'</span>'+
+    '<span class="pill '+(g.casa?"home":"away")+'">'+(g.casa?"Casa":"Trasferta")+'</span>'+(!g.casa&&g.indirizzo&&!past?'<a class="mapbtn sm" href="'+mapsUrl(g)+'" target="_blank" rel="noopener">'+PIN+'Maps</a>':'')+'</div></div>'+
+    '<div class="gr">'+right+'</div></div>';
+}
+function viewCal(){
+  if(ui.calErr)return calUnavailable();
+  if(!state.gare.length)return'<div class="empty"><strong>Nessuna gara</strong>Il capitano non ha ancora inserito il calendario.</div>';
+  var ng=nextGame(),r=gameRecord(),h="";
+  if(ng)h+='<section class="match-hero" aria-label="Prossima gara"><div class="k">Prossima gara · '+(ng.casa?"in casa":"in trasferta")+'</div><div class="when">'+longDate(ng)+'</div>'+
+    '<div class="vs">'+(ng.casa?'<span class="us">GAN</span><span class="sep"> vs </span>'+esc(ng.avversario):esc(ng.avversario)+'<span class="sep"> vs </span><span class="us">GAN</span>')+'</div>'+
+    '<div class="place">'+(ng.campo?'<b>'+esc(ng.campo)+'</b>':'')+(ng.indirizzo?' · '+esc(ng.indirizzo):'')+'</div>'+
+    (ng.colori_avv?'<div class="place">Colori avversari: <b>'+esc(ng.colori_avv)+'</b></div>':'')+
+    (ng.note?'<div class="place">Nota: <b>'+esc(ng.note)+'</b></div>':'')+
+    (ng.indirizzo?'<a class="mapbtn" href="'+mapsUrl(ng)+'" target="_blank" rel="noopener">'+PIN+'Apri in Google Maps</a>':'')+'</section>';
+  if(r.g)h+='<div class="rec"><div><b class="num">'+r.g+'</b>Giocate</div><div><b class="num">'+r.v+'</b>Vinte</div><div><b class="num">'+r.n+'</b>Pari</div><div><b class="num">'+r.p+'</b>Perse</div><div><b class="num">'+r.gf+'–'+r.gs+'</b>Gol</div><div><b class="num">'+r.pt+'</b>Punti</div></div>';
+  var others=state.gare.filter(function(g){return g.fase!=="andata"&&g.fase!=="ritorno"});
+  [["andata","Andata"],["ritorno","Ritorno"]].forEach(function(gr){
+    var list=state.gare.filter(function(g){return g.fase===gr[0]});if(!list.length)return;
+    h+='<div class="month" style="margin-top:20px"><span>'+gr[1]+'</span><span>'+list.length+' gare</span></div><div class="list">'+list.map(function(g){return gameRow(g,ng&&g.id===ng.id)}).join("")+'</div>';
+  });
+  if(others.length)h+='<div class="month" style="margin-top:20px"><span>Altre gare</span></div><div class="list">'+others.map(function(g){return gameRow(g,ng&&g.id===ng.id)}).join("")+'</div>';
+  return h+'<p class="hint">Calcio Open C a 7 · Girone D. Le gare passate senza punteggio aspettano il risultato dal capitano.</p>';
+}
+function calForm(){
+  var g=ui.calEdit?state.gare.filter(function(x){return x.id===ui.calEdit})[0]:null;if(ui.calEdit&&!g)ui.calEdit=null;
+  var opps=[];state.gare.forEach(function(x){if(opps.indexOf(x.avversario)<0)opps.push(x.avversario)});opps.sort();
+  var dis=ui.busy?" disabled":"",v=function(k,d){return g&&g[k]!=null?esc(g[k]):(d||"")};
+  return'<form class="card" id="cal-form" autocomplete="off"><h2>'+(g?"Modifica gara":"Nuova gara")+'</h2><div class="grid">'+
+   '<label>Avversario<input type="text" id="c-avv" list="c-opps" required maxlength="60" value="'+v("avversario")+'"></label><datalist id="c-opps">'+opps.map(function(o){return'<option value="'+esc(o)+'">'}).join("")+'</datalist>'+
+   '<label>Dove<select id="c-casa"><option value="1"'+(!g||g.casa?" selected":"")+'>In casa</option><option value="0"'+(g&&!g.casa?" selected":"")+'>In trasferta</option></select></label>'+
+   '<label>Data<input type="date" id="c-data" required value="'+v("data")+'"></label>'+
+   '<label>Ora<input type="time" id="c-ora" required value="'+v("ora","21:30")+'"></label>'+
+   '<label>Fase<select id="c-fase">'+[["andata","Andata"],["ritorno","Ritorno"],["amichevole","Amichevole"],["coppa","Coppa"]].map(function(o){return'<option value="'+o[0]+'"'+((g?g.fase:"andata")===o[0]?" selected":"")+'>'+o[1]+'</option>'}).join("")+'</select></label>'+
+   '<label>Giornata (facoltativa)<input type="number" id="c-giornata" min="1" max="60" value="'+v("giornata")+'"></label>'+
+   '<label>Campo<input type="text" id="c-campo" maxlength="80" value="'+v("campo")+'"></label>'+
+   '<label>Indirizzo<input type="text" id="c-ind" maxlength="120" value="'+v("indirizzo")+'"></label>'+
+   '<label>Colori avversari<input type="text" id="c-col" maxlength="40" value="'+v("colori_avv")+'"></label>'+
+   '<label>Note<input type="text" id="c-note" maxlength="140" value="'+v("note")+'"></label>'+
+   '</div><p class="err" id="c-ferr" hidden></p><div class="row" style="margin-top:14px"><span class="hint" style="margin:0;flex:1 1 220px">Campo e indirizzo si compilano da soli in base all’avversario e a casa/trasferta.</span>'+(g?'<button type="button" class="btn" data-act="calCancel">Annulla</button>':'')+'<button class="btn primary" type="submit"'+dis+'>'+(g?"Salva modifiche":"Aggiungi gara")+'</button></div></form>';
+}
+function adminCal(){
+  if(ui.calErr)return calUnavailable()+'<p class="hint">Se non l’hai ancora fatto, esegui lo script del calendario nell’SQL Editor di Supabase.</p>';
+  var dis=ui.busy?" disabled":"",from=addDays(today(),-21);
+  var list=state.gare.filter(function(g){return ui.calAll||g.data>=from||(g.data<today()&&!hasRes(g))});
+  return calForm()+'<div class="card" style="margin-top:16px"><h2>Gare e risultati</h2>'+
+    '<div class="row" style="margin-bottom:6px"><label class="switch"><input type="checkbox" id="cal-all"'+(ui.calAll?" checked":"")+'> Mostra anche le gare vecchie già con risultato</label></div>'+
+    list.map(function(g){
+      var del=ui.calConfirmRm===g.id?'<span class="muted" style="font-size:13px">Eliminare?</span><button class="btn sm danger" data-act="calRm" data-id="'+g.id+'"'+dis+'>Sì</button><button class="btn sm" data-act="calRmNo">No</button>'
+        :'<button class="btn sm" data-act="calEdit" data-id="'+g.id+'">Modifica</button><button class="btn sm" data-act="calAskRm" data-id="'+g.id+'">Elimina</button>';
+      return'<div class="afine"><div style="min-width:0"><b>'+fmtD(g.data)+' · '+esc(g.ora)+'</b> '+resPill(g)+'<div class="fwhy">'+matchTitle(g)+' · '+phaseLabel(g)+'</div></div>'+
+        '<div class="acts"><span class="resin"><input type="number" min="0" max="99" id="rg-'+g.id+'" value="'+(g.gol_gan!=null?g.gol_gan:"")+'" aria-label="Gol GAN" placeholder="GAN">–<input type="number" min="0" max="99" id="ra-'+g.id+'" value="'+(g.gol_avv!=null?g.gol_avv:"")+'" aria-label="Gol avversari" placeholder="Avv"></span>'+
+        '<button class="btn sm primary" data-act="resSave" data-id="'+g.id+'"'+dis+'>Salva</button>'+del+'</div></div>';
+    }).join("")+'<p class="hint">Scrivi i gol del GAN a sinistra e quelli degli avversari a destra. Per togliere un risultato svuota i due campi e premi Salva.</p></div>';
+}
+
 /* ---------- certificates ---------- */
 function certUnavailable(){
   return'<div class="empty"><strong>Certificati non disponibili</strong>Non riesco a leggere i certificati medici ('+esc(ui.certErr)+').</div>';
@@ -640,6 +757,7 @@ function render(){
   else if(s==="multe")body=mg?viewAdmin():v==="cronologia"?viewChrono():viewPlayers();
   else if(s==="spogliatoi")body=mg?adminSp():viewSp();
   else if(s==="certificati")body=mg?adminCert():viewCert();
+  else if(s==="calendario")body=mg?adminCal():viewCal();
   else body=adminPassword();
   // keep focus/values of an open form across a toast re-render
   var keep=null,ae=document.activeElement;
@@ -707,6 +825,17 @@ root.addEventListener("click",function(e){
     case"spRm":
       var nR=el.dataset.p;ui.spConfirmRm=null;
       spSave(state.sp.coda.filter(function(x){return x!==nR}),state.sp.assenti.filter(function(x){return x!==nR}),nR+" tolto dalla fila.");break;
+    case"calEdit":ui.calEdit=el.dataset.id;ui.calConfirmRm=null;render();window.scrollTo({top:0});break;
+    case"calCancel":ui.calEdit=null;render();break;
+    case"calAskRm":ui.calConfirmRm=el.dataset.id;render();break;
+    case"calRmNo":ui.calConfirmRm=null;render();break;
+    case"calRm":var gR=el.dataset.id;ui.calConfirmRm=null;if(ui.calEdit===gR)ui.calEdit=null;run(sb.from("gare").delete().eq("id",gR),"Gara eliminata.");break;
+    case"resSave":
+      var gid=el.dataset.id,rgv=$("#rg-"+gid).value,rav=$("#ra-"+gid).value;
+      if((rgv==="")!==(rav==="")){toast("Inserisci entrambi i gol, oppure svuota tutti e due i campi.",true);break}
+      var rg=rgv===""?null:parseInt(rgv,10),ra=rav===""?null:parseInt(rav,10);
+      if((rg!=null&&!(rg>=0))||(ra!=null&&!(ra>=0))){toast("I gol devono essere numeri da 0 in su.",true);break}
+      run(sb.from("gare").update({gol_gan:rg,gol_avv:ra}).eq("id",gid),rg==null?"Risultato tolto.":"Risultato salvato: "+rg+"–"+ra+".");break;
     case"certAskRm":ui.certConfirmRm=el.dataset.p;render();break;
     case"certRmNo":ui.certConfirmRm=null;render();break;
     case"certRm":var nC=el.dataset.p;ui.certConfirmRm=null;run(sb.from("certificati").delete().eq("nome",nC),nC+" tolto dai certificati.");break;
@@ -714,6 +843,15 @@ root.addEventListener("click",function(e){
 });
 root.addEventListener("change",function(e){
   var t=e.target;
+  if(t.id==="cal-all"){ui.calAll=t.checked;render();return}
+  if(t.id==="c-avv"||t.id==="c-casa"){
+    // fill field and address: our ground when at home, otherwise the opponent's ground from earlier games
+    var atHome=$("#c-casa").value==="1",opp=clean($("#c-avv").value),src=null;
+    state.gare.forEach(function(g){if(atHome?g.casa:(!g.casa&&g.avversario===opp))src=g});
+    if(src){$("#c-campo").value=src.campo||"";$("#c-ind").value=src.indirizzo||"";$("#c-note").value=atHome?"":(src.note||"")}
+    var withCol=state.gare.filter(function(g){return g.avversario===opp&&g.colori_avv})[0];if(withCol&&!$("#c-col").value)$("#c-col").value=withCol.colori_avv;
+    return;
+  }
   if(t.dataset&&t.dataset.cert!=null){
     var cn=t.dataset.cert,cv=t.value||null;
     run(sb.from("certificati").update({scadenza:cv,updated_at:new Date().toISOString()}).eq("nome",cn),cv?"Scadenza di "+cn+" salvata: "+fmtD(cv)+".":"Data di "+cn+" tolta.");
@@ -765,6 +903,17 @@ root.addEventListener("submit",function(e){
     var n=clean($("#pl-new").value);if(!n)return;
     if(state.players.indexOf(n)>=0){toast("Questo giocatore è già in rosa.",true);return}
     run(sb.from("giocatori").insert({nome:n}),n+" aggiunto alla rosa.");
+  }
+  else if(id==="cal-form"){
+    var fe=$("#c-ferr"),fail2=function(m){fe.textContent=m;fe.hidden=false};
+    var row={avversario:clean($("#c-avv").value),casa:$("#c-casa").value==="1",data:$("#c-data").value,ora:$("#c-ora").value||"21:30",fase:$("#c-fase").value,
+      giornata:$("#c-giornata").value?parseInt($("#c-giornata").value,10):null,campo:clean($("#c-campo").value)||null,indirizzo:clean($("#c-ind").value)||null,
+      colori_avv:clean($("#c-col").value)||null,note:clean($("#c-note").value)||null};
+    if(!row.avversario)return fail2("Scrivi il nome della squadra avversaria.");
+    if(!row.data)return fail2("Scegli la data della gara.");
+    var editG=ui.calEdit;
+    if(editG)run(sb.from("gare").update(row).eq("id",editG),"Gara aggiornata.").then(function(ok){if(ok){ui.calEdit=null;render()}});
+    else run(sb.from("gare").insert(row),"Gara aggiunta: "+fmtD(row.data)+".");
   }
   else if(id==="cert-form"){
     var cN=clean($("#cert-new").value),cD=$("#cert-new-date").value||null;if(!cN)return;
