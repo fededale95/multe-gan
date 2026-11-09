@@ -133,6 +133,28 @@ button{cursor:pointer}
 .resin{display:flex;gap:6px;align-items:center}
 .resin input{width:60px;padding:6px 8px;text-align:center}
 
+/* scorers */
+.game .gs{font-size:13px;color:var(--ink);margin-top:4px;overflow-wrap:anywhere}
+.game .gs .muted{color:var(--muted)}
+.goled{border-top:1px dashed var(--line);padding:10px 0 12px;display:flex;flex-direction:column;gap:8px}
+.goled .gl{display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
+.goled .gl b{font-family:var(--f-display);font-size:18px;color:var(--muted);text-align:center}
+@media (max-width:480px){.goled .gl{grid-template-columns:24px minmax(0,1fr)}.goled .gl select:last-child{grid-column:2}}
+.lbs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:4px}
+@media (max-width:700px){.lbs{grid-template-columns:minmax(0,1fr)}}
+.lb{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.lb h2{margin:0 0 8px;font-family:var(--f-display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:8px}
+.lb h2 i{width:10px;height:10px;border-radius:50%;background:var(--c);display:block}
+.lb.g{--c:var(--green)} .lb.a{--c:var(--orange)}
+.lr{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.lr:first-of-type{border-top:0}
+.lr .rk{font-family:var(--f-display);font-weight:800;font-size:18px;color:var(--muted);text-align:center}
+.lr.top .rk{color:var(--c)}
+.lr .nm{font-weight:700;overflow-wrap:anywhere}
+.lr .ct{font-family:var(--f-display);font-weight:800;font-size:22px}
+.lr .lbar{grid-column:2/-1;height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.lr .lbar i{display:block;height:100%;background:var(--c)}
+
 /* certificates */
 .cstats{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 .cstat{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:14px;color:var(--muted)}
@@ -290,10 +312,10 @@ var ls={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}
 var configured=CFG.SUPABASE_URL&&CFG.SUPABASE_URL.indexOf("INSERISCI")<0&&CFG.SUPABASE_ANON_KEY&&CFG.SUPABASE_ANON_KEY.indexOf("INSERISCI")<0&&window.supabase;
 var sb=configured?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):null;
 
-var state={players:[],fines:[],sp:{coda:[],assenti:[]},spHist:[],cert:[],gare:[]};
-var ui={section:"home",view:"",admin:false,atab:"nuova",calErr:"",calEdit:null,calConfirmRm:null,calAll:false,spRename:null,spConfirmRm:null,spErr:"",certErr:"",certConfirmRm:null,fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
+var state={players:[],fines:[],sp:{coda:[],assenti:[]},spHist:[],cert:[],gare:[],gol:[]};
+var ui={section:"home",view:"",admin:false,atab:"nuova",calErr:"",golErr:"",golOpen:null,calEdit:null,calConfirmRm:null,calAll:false,spRename:null,spConfirmRm:null,spErr:"",certErr:"",certConfirmRm:null,fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
 // sections live in the URL hash (#multe, #spogliatoi, #certificati, #account) so the phone's back button returns home
-var SECTIONS={multe:["giocatori","cronologia","regolamento"],spogliatoi:["turni"],certificati:["elenco"],calendario:["gare"],account:["password"]};
+var SECTIONS={multe:["giocatori","cronologia","regolamento"],spogliatoi:["turni"],certificati:["elenco"],calendario:["gare","marcatori"],account:["password"]};
 var TITLES={multe:"Multe",spogliatoi:"Spogliatoi",certificati:"Certificati",calendario:"Calendario",account:"Account"};
 function readHash(){
   var h=(location.hash||"").replace("#","");
@@ -362,9 +384,34 @@ function certSorted(){
   });
 }
 function loadGare(){
-  return sb.from("gare").select("*").order("data").order("ora").then(function(r){
-    if(r.error)throw r.error;state.gare=r.data||[];ui.calErr="";
+  return Promise.all([
+    sb.from("gare").select("*").order("data").order("ora"),
+    sb.from("gol").select("*").order("ordine")
+  ]).then(function(res){
+    if(res[0].error)throw res[0].error;state.gare=res[0].data||[];ui.calErr="";
+    if(res[1].error){state.gol=[];ui.golErr=res[1].error.message||"errore"}else{state.gol=res[1].data||[];ui.golErr=""}
   }).catch(function(e){ui.calErr=(e&&e.message)||"errore di rete"});
+}
+function golOf(id){return state.gol.filter(function(x){return x.gara_id===id}).sort(function(a,b){return a.ordine-b.ordine})}
+function scorersLine(g){
+  var gs=golOf(g.id);if(!gs.length)return"";
+  // group repeated scorers: "Savino 2 (ass. Di Pinto, Betteri)"
+  var by={},order=[],auto=0;
+  gs.forEach(function(x){if(!x.marcatore){auto++;return}if(!by[x.marcatore]){by[x.marcatore]={n:0,ass:[]};order.push(x.marcatore)}by[x.marcatore].n++;if(x.assist)by[x.marcatore].ass.push(x.assist)});
+  var parts=order.map(function(n){var b=by[n];return'<b>'+esc(n)+'</b>'+(b.n>1?" "+b.n:"")+(b.ass.length?' <span class="muted">(ass. '+b.ass.map(esc).join(", ")+')</span>':'')});
+  if(auto)parts.push('<span class="muted">autogol'+(auto>1?" "+auto:"")+'</span>');
+  return'<div class="gs">⚽ '+parts.join(", ")+'</div>';
+}
+function roster(){
+  var names=state.cert.map(function(c){return c.nome});
+  state.gol.forEach(function(x){[x.marcatore,x.assist].forEach(function(n){if(n&&names.indexOf(n)<0)names.push(n)})});
+  return names.sort(function(a,b){return a.localeCompare(b,"it")});
+}
+function leaderboard(key){
+  var m={};state.gol.forEach(function(x){var n=x[key];if(n)m[n]=(m[n]||0)+1});
+  var rows=Object.keys(m).map(function(n){return{n:n,c:m[n]}}).sort(function(a,b){return b.c-a.c||a.n.localeCompare(b.n,"it")});
+  var rank=0,prev=null;rows.forEach(function(r,i){if(r.c!==prev){rank=i+1;prev=r.c}r.rank=rank});
+  return rows;
 }
 var DAYS=["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
 function hasRes(g){return g.gol_gan!=null&&g.gol_avv!=null}
@@ -478,7 +525,7 @@ function payBox(){
   return'<section class="paybox" aria-label="Pagamento multe"><div class="txt"><b>Paga la tua multa</b>Versa l’importo nella colletta Satispay della squadra e <strong>scrivi il tuo nome nel messaggio</strong>. Il capitano la segnerà come saldata.</div>'+payLink("Paga con Satispay")+'</section>';
 }
 function tabs(){
-  var LABELS={multe:[["giocatori","Per giocatore"],["cronologia","Cronologia"],["regolamento","Regolamento"]],spogliatoi:[["turni","Turni"]],certificati:[["elenco","Elenco"]],calendario:[["gare","Gare"]]};
+  var LABELS={multe:[["giocatori","Per giocatore"],["cronologia","Cronologia"],["regolamento","Regolamento"]],spogliatoi:[["turni","Turni"]],certificati:[["elenco","Elenco"]],calendario:[["gare","Gare"],["marcatori","Marcatori"]]};
   var items=(LABELS[ui.section]||[]).slice();
   if(ui.admin&&LABELS[ui.section])items.push(["gestione","Gestione"]);
   if(items.length<2)return'<div style="height:14px"></div>';
@@ -595,7 +642,7 @@ function gameRow(g,next){
     :(past?'<span class="pill none">Risultato da inserire</span>':'<span class="num" style="font-weight:700">'+esc(g.ora)+'</span>');
   return'<div class="game'+(next?" next":"")+(past?" past":"")+'"><div class="date"><div class="d num">'+d.getDate()+'</div><div class="m">'+MONTHS[d.getMonth()]+'</div></div>'+
     '<div style="min-width:0"><div class="gt">'+matchTitle(g)+'</div><div class="gm"><span>'+phaseLabel(g)+'</span>'+
-    '<span class="pill '+(g.casa?"home":"away")+'">'+(g.casa?"Casa":"Trasferta")+'</span>'+(!g.casa&&g.indirizzo&&!past?'<a class="mapbtn sm" href="'+mapsUrl(g)+'" target="_blank" rel="noopener">'+PIN+'Maps</a>':'')+'</div></div>'+
+    '<span class="pill '+(g.casa?"home":"away")+'">'+(g.casa?"Casa":"Trasferta")+'</span>'+(!g.casa&&g.indirizzo&&!past?'<a class="mapbtn sm" href="'+mapsUrl(g)+'" target="_blank" rel="noopener">'+PIN+'Maps</a>':'')+'</div>'+(hasRes(g)?scorersLine(g):'')+'</div>'+
     '<div class="gr">'+right+'</div></div>';
 }
 function viewCal(){
@@ -616,6 +663,27 @@ function viewCal(){
   });
   if(others.length)h+='<div class="month" style="margin-top:20px"><span>Altre gare</span></div><div class="list">'+others.map(function(g){return gameRow(g,ng&&g.id===ng.id)}).join("")+'</div>';
   return h+'<p class="hint">Calcio Open C a 7 · Girone D. Le gare passate senza punteggio aspettano il risultato dal capitano.</p>';
+}
+function viewScorers(){
+  if(ui.calErr)return calUnavailable();
+  if(ui.golErr)return'<div class="empty"><strong>Marcatori non disponibili</strong>Non riesco a leggere i marcatori ('+esc(ui.golErr)+').</div>';
+  if(!state.gol.length)return'<div class="empty"><strong>Nessun gol registrato</strong>Le classifiche compaiono quando il capitano inserisce i marcatori delle gare.</div>';
+  function board(cls,title,key,unit){
+    var rows=leaderboard(key),max=rows.length?rows[0].c:1;
+    return'<section class="lb '+cls+'"><h2><i></i>'+title+'</h2>'+(rows.length?rows.map(function(r){
+      return'<div class="lr'+(r.rank===1?" top":"")+'"><span class="rk num">'+r.rank+'</span><span class="nm">'+esc(r.n)+'</span><span class="ct num">'+r.c+'</span><span class="lbar"><i style="width:'+Math.max(6,r.c/max*100)+'%"></i></span></div>';
+    }).join(""):'<p class="hint">Ancora nessun '+unit+'.</p>')+'</section>';
+  }
+  var tot=state.gol.length,auto=state.gol.filter(function(x){return!x.marcatore}).length,withAss=state.gol.filter(function(x){return x.assist}).length;
+  return'<div class="lbs">'+board("g","Marcatori","marcatore","gol")+board("a","Assist","assist","assist")+'</div>'+
+    '<p class="hint">'+tot+' gol registrati'+(auto?', di cui '+auto+(auto===1?' autogol avversario (non conta':' autogol avversari (non contano')+' in classifica)':'')+' · '+withAss+' con assist. A pari numero la posizione è la stessa.</p>';
+}
+function golEditor(g){
+  var gs=golOf(g.id),names=roster(),dis=ui.busy?" disabled":"",n=g.gol_gan;
+  function opts(sel,first,auto){return'<option value="">'+first+'</option>'+(auto?'<option value="__auto"'+(sel==="__auto"?" selected":"")+'>Autogol avversario</option>':'')+names.map(function(x){return'<option'+(x===sel?" selected":"")+'>'+esc(x)+'</option>'}).join("")}
+  var rows="";for(var i=0;i<n;i++){var x=gs[i];var sc=x?(x.marcatore||"__auto"):"";
+    rows+='<div class="gl"><b class="num">'+(i+1)+'</b><select id="gm-'+i+'" aria-label="Marcatore del gol '+(i+1)+'">'+opts(sc,"Marcatore…",true)+'</select><select id="ga-'+i+'" aria-label="Assist del gol '+(i+1)+'">'+opts(x&&x.assist||"","Nessun assist",false)+'</select></div>'}
+  return'<div class="goled">'+rows+'<p class="err" id="gol-err" hidden></p><div class="row"><span class="spacer"></span><button class="btn sm" data-act="golClose">Annulla</button><button class="btn sm primary" data-act="golSave" data-id="'+g.id+'"'+dis+'>Salva marcatori</button></div></div>';
 }
 function calForm(){
   var g=ui.calEdit?state.gare.filter(function(x){return x.id===ui.calEdit})[0]:null;if(ui.calEdit&&!g)ui.calEdit=null;
@@ -645,8 +713,10 @@ function adminCal(){
         :'<button class="btn sm" data-act="calEdit" data-id="'+g.id+'">Modifica</button><button class="btn sm" data-act="calAskRm" data-id="'+g.id+'">Elimina</button>';
       return'<div class="afine"><div style="min-width:0"><b>'+fmtD(g.data)+' · '+esc(g.ora)+'</b> '+resPill(g)+'<div class="fwhy">'+matchTitle(g)+' · '+phaseLabel(g)+'</div></div>'+
         '<div class="acts"><span class="resin"><input type="number" min="0" max="99" id="rg-'+g.id+'" value="'+(g.gol_gan!=null?g.gol_gan:"")+'" aria-label="Gol GAN" placeholder="GAN">–<input type="number" min="0" max="99" id="ra-'+g.id+'" value="'+(g.gol_avv!=null?g.gol_avv:"")+'" aria-label="Gol avversari" placeholder="Avv"></span>'+
-        '<button class="btn sm primary" data-act="resSave" data-id="'+g.id+'"'+dis+'>Salva</button>'+del+'</div></div>';
-    }).join("")+'<p class="hint">Scrivi i gol del GAN a sinistra e quelli degli avversari a destra. Per togliere un risultato svuota i due campi e premi Salva.</p></div>';
+        '<button class="btn sm primary" data-act="resSave" data-id="'+g.id+'"'+dis+'>Salva</button>'+
+        (hasRes(g)&&g.gol_gan>0?'<button class="btn sm '+(golOf(g.id).length===g.gol_gan?"":"accent")+'" data-act="golOpen" data-id="'+g.id+'"'+(ui.golErr?" disabled":"")+'>Marcatori '+golOf(g.id).length+'/'+g.gol_gan+'</button>':'')+
+        del+'</div></div>'+(ui.golOpen===g.id&&hasRes(g)&&g.gol_gan>0?golEditor(g):'');
+    }).join("")+'<p class="hint">Scrivi i gol del GAN a sinistra e quelli degli avversari a destra. Per togliere un risultato svuota i due campi e premi Salva. Poi con “Marcatori” indica chi ha segnato e chi ha fatto l’assist per ogni gol (arancione = da completare).</p>'+(ui.golErr?'<p class="hint">Per i marcatori esegui prima lo script marcatori nell’SQL Editor di Supabase.</p>':'')+'</div>';
 }
 
 /* ---------- certificates ---------- */
@@ -757,7 +827,7 @@ function render(){
   else if(s==="multe")body=mg?viewAdmin():v==="cronologia"?viewChrono():viewPlayers();
   else if(s==="spogliatoi")body=mg?adminSp():viewSp();
   else if(s==="certificati")body=mg?adminCert():viewCert();
-  else if(s==="calendario")body=mg?adminCal():viewCal();
+  else if(s==="calendario")body=mg?adminCal():v==="marcatori"?viewScorers():viewCal();
   else body=adminPassword();
   // keep focus/values of an open form across a toast re-render
   var keep=null,ae=document.activeElement;
@@ -825,6 +895,19 @@ root.addEventListener("click",function(e){
     case"spRm":
       var nR=el.dataset.p;ui.spConfirmRm=null;
       spSave(state.sp.coda.filter(function(x){return x!==nR}),state.sp.assenti.filter(function(x){return x!==nR}),nR+" tolto dalla fila.");break;
+    case"golOpen":ui.golOpen=ui.golOpen===el.dataset.id?null:el.dataset.id;render();break;
+    case"golClose":ui.golOpen=null;render();break;
+    case"golSave":
+      var gG=state.gare.filter(function(x){return x.id===el.dataset.id})[0];if(!gG)break;
+      var list=[],ge=$("#gol-err"),bad="";
+      for(var gi=0;gi<gG.gol_gan;gi++){
+        var mk=$("#gm-"+gi).value,as=$("#ga-"+gi).value;
+        if(!mk){bad="Scegli il marcatore del gol "+(gi+1)+" (o “Autogol avversario”).";break}
+        if(mk!=="__auto"&&as===mk){bad="Nel gol "+(gi+1)+" marcatore e assist sono la stessa persona.";break}
+        list.push({marcatore:mk==="__auto"?null:mk,assist:as||null});
+      }
+      if(bad){ge.textContent=bad;ge.hidden=false;break}
+      run(sb.rpc("salva_gol",{p_gara:gG.id,p_gol:list}),"Marcatori salvati.").then(function(ok){if(ok){ui.golOpen=null;render()}});break;
     case"calEdit":ui.calEdit=el.dataset.id;ui.calConfirmRm=null;render();window.scrollTo({top:0});break;
     case"calCancel":ui.calEdit=null;render();break;
     case"calAskRm":ui.calConfirmRm=el.dataset.id;render();break;
