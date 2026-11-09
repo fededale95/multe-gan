@@ -388,8 +388,8 @@ function header(){
     :'<button class="btn-admin" data-act="openLogin" aria-label="Accesso admin"'+(sb?'':' disabled')+'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span class="bl">Accesso admin</span></button>';
   var home=ui.section==="home";
   var back=home?'':'<button class="btn-back" data-act="go" data-s="" aria-label="Torna alla schermata iniziale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></button>';
-  var title=home?'Multe <b>GAN</b>':'<b>'+esc(TITLES[ui.section])+'</b>';
-  return'<header class="band"><div class="wrap">'+back+'<img class="logo" src="logo.png" alt="Logo ASD GaN Milano"><div class="brand"><h1>'+title+'</h1><p>GAN Open C1 · ASD GaN Milano</p></div>'+btn+'</div></header>';
+  var title=home?'GAN <b>Open C1</b>':'<b>'+esc(TITLES[ui.section])+'</b>';
+  return'<header class="band"><div class="wrap">'+back+'<img class="logo" src="logo.png" alt="Logo ASD GaN Milano"><div class="brand"><h1>'+title+'</h1><p>'+(home?'ASD GaN Milano':'GAN Open C1 · ASD GaN Milano')+'</p></div>'+btn+'</div></header>';
 }
 var ICONS={
   multe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
