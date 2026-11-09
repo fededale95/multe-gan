@@ -67,6 +67,20 @@ button{cursor:pointer}
 .paybtn svg{width:18px;height:18px}
 .paybtn.sm{padding:6px 12px;font-size:13px;border-radius:8px}
 .pdetail .payrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
+.turn-hero{background:var(--band);color:var(--band-ink);border-radius:16px;padding:18px 18px 16px;border-bottom:5px solid var(--orange);margin-top:14px}
+.turn-hero .k{font-size:12px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;opacity:.85}
+.who{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,8vw,44px);line-height:1.05;text-transform:uppercase;margin-top:4px;overflow-wrap:anywhere}
+.who .amp{color:var(--orange)}
+.who.sm{font-size:28px;color:var(--ink)}
+.turn-hero .abs{margin-top:8px;font-size:14px;background:rgba(0,0,0,.18);border-radius:8px;padding:6px 10px;display:inline-block}
+.turn-hero .last{margin-top:8px;font-size:13px;opacity:.85}
+.turns{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.turn{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.turn .tp{flex:1;min-width:0;font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.turn .amp,.afine .amp{color:var(--orange-ink)}
+.tn{font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--muted);min-width:24px;text-align:center}
+.tn.sm{font-size:16px;min-width:20px;display:inline-block}
+.afine.pairstart{border-top:2px solid var(--line)}
 .tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:4px;margin:20px 0 14px;overflow-x:auto}
 .tab{flex:1;border:0;background:transparent;border-radius:9px;padding:9px 12px;font-weight:600;color:var(--muted);white-space:nowrap}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -208,8 +222,8 @@ var ls={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}
 var configured=CFG.SUPABASE_URL&&CFG.SUPABASE_URL.indexOf("INSERISCI")<0&&CFG.SUPABASE_ANON_KEY&&CFG.SUPABASE_ANON_KEY.indexOf("INSERISCI")<0&&window.supabase;
 var sb=configured?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):null;
 
-var state={players:[],fines:[]};
-var ui={view:ls.get("gan-view")||"giocatori",admin:false,atab:"nuova",fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
+var state={players:[],fines:[],sp:{coda:[],assenti:[]},spHist:[]};
+var ui={view:ls.get("gan-view")||"giocatori",admin:false,atab:"nuova",spRename:null,spConfirmRm:null,spErr:"",fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
 if(ui.view==="gestione")ui.view="giocatori";
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
@@ -228,13 +242,37 @@ function load(){
   if(!sb){ui.loading=false;render();return Promise.resolve()}
   return Promise.all([
     sb.from("giocatori").select("nome").order("nome"),
-    sb.from("multe").select("*").order("data",{ascending:false})
+    sb.from("multe").select("*").order("data",{ascending:false}),
+    loadSp()
   ]).then(function(res){
     if(res[0].error)throw res[0].error;if(res[1].error)throw res[1].error;
     state.players=res[0].data.map(function(r){return r.nome});
     state.fines=res[1].data.map(fromRow);
     ui.loading=false;ui.loadErr="";render();
   }).catch(function(e){ui.loading=false;ui.loadErr=(e&&e.message)||"errore di rete";render()});
+}
+// locker-room rota: never rejects, so a problem here does not hide the fines
+function loadSp(){
+  return Promise.all([
+    sb.from("spogliatoi_stato").select("coda,assenti").eq("id",1).maybeSingle(),
+    sb.from("spogliatoi_storico").select("*").order("id",{ascending:false}).limit(30)
+  ]).then(function(res){
+    if(res[0].error)throw res[0].error;if(res[1].error)throw res[1].error;
+    var r=res[0].data||{};
+    state.sp={coda:r.coda||[],assenti:r.assenti||[]};state.spHist=res[1].data||[];ui.spErr="";
+  }).catch(function(e){ui.spErr=(e&&e.message)||"errore di rete"});
+}
+// who cleans next: the first two people in the queue who are not absent.
+// Absent people keep their place at the front and clean the following time.
+function spPlan(){
+  var coda=state.sp.coda,ass=state.sp.assenti,cur=[];
+  coda.forEach(function(n){if(cur.length<2&&ass.indexOf(n)<0)cur.push(n)});
+  var rest=coda.filter(function(n){return cur.indexOf(n)<0}),next=[];
+  for(var i=0;i<rest.length;i+=2)next.push(rest.slice(i,i+2));
+  return{cur:cur,next:next,newCoda:rest.concat(cur),absent:ass.filter(function(n){return coda.indexOf(n)>=0})};
+}
+function spSave(coda,assenti,msg){
+  return run(sb.from("spogliatoi_stato").update({coda:coda,assenti:assenti,updated_at:new Date().toISOString()}).eq("id",1),msg);
 }
 // run a write, then reload everything; err messages in Italian
 function run(promise,okMsg){
@@ -292,11 +330,11 @@ function payLink(label,sm){
   return'<a class="paybtn'+(sm?" sm":"")+'" href="'+esc(CFG.SATISPAY_URL)+'" target="_blank" rel="noopener">'+PAY_ICON+esc(label)+'</a>';
 }
 function payBox(){
-  if(!CFG.SATISPAY_URL||ui.view==="gestione")return"";
+  if(!CFG.SATISPAY_URL||ui.view==="gestione"||ui.view==="spogliatoi")return"";
   return'<section class="paybox" aria-label="Pagamento multe"><div class="txt"><b>Paga la tua multa</b>Versa l’importo nella colletta Satispay della squadra e <strong>scrivi il tuo nome nel messaggio</strong>. Il capitano la segnerà come saldata.</div>'+payLink("Paga con Satispay")+'</section>';
 }
 function tabs(){
-  var items=[["giocatori","Per giocatore"],["cronologia","Cronologia"],["regolamento","Regolamento"]];
+  var items=[["giocatori","Per giocatore"],["cronologia","Cronologia"],["spogliatoi","Spogliatoi"],["regolamento","Regolamento"]];
   if(ui.admin)items.push(["gestione","Gestione"]);
   return'<nav class="tabs" role="tablist">'+items.map(function(i){return'<button class="tab'+(i[0]==="gestione"?" mgmt":"")+'" role="tab" aria-selected="'+(ui.view===i[0])+'" data-act="view" data-v="'+i[0]+'">'+i[1]+'</button>'}).join("")+'</nav>';
 }
@@ -353,14 +391,60 @@ function viewRules(){
    '<div class="note-box"><b>La multa va pagata entro una settimana dall’infrazione</b>, altrimenti raddoppia. Le somme sono annotate e conservate da capitano e vice-capitano (Di Poce e Colantuoni Luca) e destinate solo ad attività o necessità della squadra.</div>'+
    '<p class="hint">Il regolamento tutela puntualità, rispetto, ordine, responsabilità e spirito di squadra. Le ammende vanno da 1 a 5 € in base alla gravità.</p>';
 }
+function pairNames(p){return p.map(esc).join(' <span class="amp">&amp;</span> ')}
+function spUnavailable(){
+  return'<div class="empty"><strong>Turni non disponibili</strong>Non riesco a leggere i turni degli spogliatoi ('+esc(ui.spErr)+').</div>';
+}
+function viewSp(){
+  if(ui.spErr)return spUnavailable();
+  if(!state.sp.coda.length)return'<div class="empty"><strong>Nessun turno</strong>Il capitano non ha ancora inserito la fila per la pulizia degli spogliatoi.</div>';
+  var pl=spPlan(),last=state.spHist[0];
+  var h='<section class="turn-hero" aria-label="Prossima pulizia"><div class="k">Prossima pulizia spogliatoi</div>'+
+    '<div class="who">'+(pl.cur.length?pairNames(pl.cur):"Nessuno disponibile")+'</div>'+
+    (pl.absent.length?'<div class="abs">Assent'+(pl.absent.length===1?"e":"i")+': <b>'+pl.absent.map(esc).join(", ")+'</b> — recupera'+(pl.absent.length===1?"":"no")+' la prossima volta</div>':'')+
+    (last?'<div class="last">Ultima pulizia: '+fmtD(last.data)+' · '+(last.puliti||[]).map(esc).join(" & ")+'</div>':'')+
+  '</section>';
+  if(pl.next.length){
+    h+='<div class="month" style="margin-top:20px"><span>Turni successivi</span></div><ol class="turns">'+pl.next.map(function(p,i){
+      var rec=p.some(function(n){return pl.absent.indexOf(n)>=0});
+      return'<li class="turn"><span class="tn num">'+(i+2)+'</span><span class="tp">'+pairNames(p)+(p.length<2?' <span class="muted">(da solo)</span>':'')+'</span>'+(rec?'<span class="pill due">Recupero</span>':'')+'</li>';
+    }).join("")+'</ol>';
+  }
+  return h+'<p class="hint">Dopo l’ultimo turno si ricomincia da capo. Se qualcuno è assente, pulisce il successivo in lista e l’assente recupera la volta dopo.</p>';
+}
 
 /* ---------- admin ---------- */
+function adminSp(){
+  if(ui.spErr)return spUnavailable()+'<p class="hint">Se non l’hai ancora fatto, esegui lo script degli spogliatoi nell’SQL Editor di Supabase.</p>';
+  var pl=spPlan(),sp=state.sp,dis=ui.busy?" disabled":"";
+  var h='<div class="card"><h2>Prossima pulizia</h2><div class="who sm">'+(pl.cur.length?pairNames(pl.cur):"Nessuno disponibile")+'</div>'+
+    (pl.absent.length?'<p class="hint">Assenti: '+pl.absent.map(esc).join(", ")+' (restano in testa e puliscono la prossima volta)</p>':'<p class="hint">Segna gli assenti nella fila qui sotto prima di confermare.</p>')+
+    '<div class="row" style="margin-top:12px"><button class="btn primary" data-act="spDone"'+(pl.cur.length?dis:" disabled")+'>Pulizia fatta</button>'+
+    (state.spHist.length?'<button class="btn" data-act="spUndo"'+dis+'>Annulla ultima pulizia</button>':'')+'</div></div>';
+  h+='<form class="card" id="sp-form" autocomplete="off" style="margin-top:16px"><h2>Fila ('+sp.coda.length+')</h2>'+
+    '<div class="row"><input type="text" id="sp-new" maxlength="40" placeholder="Cognome" style="flex:1 1 200px" aria-label="Nome da aggiungere in fondo alla fila"><button class="btn primary" type="submit"'+dis+'>Aggiungi in fondo</button></div>'+
+    '<div style="margin-top:8px">'+sp.coda.map(function(n,i){
+      var ab=sp.assenti.indexOf(n)>=0,isCur=pl.cur.indexOf(n)>=0;
+      if(ui.spRename===n)return'<div class="afine"><input type="text" id="sp-rename" maxlength="40" value="'+esc(n)+'" aria-label="Nuovo nome"><div class="acts"><button type="button" class="btn sm primary" data-act="spRenameOk" data-p="'+esc(n)+'"'+dis+'>Salva nome</button><button type="button" class="btn sm" data-act="spRenameNo">Annulla</button></div></div>';
+      var rm=ui.spConfirmRm===n
+        ?'<span class="muted" style="font-size:13px">Togliere?</span><button type="button" class="btn sm danger" data-act="spRm" data-p="'+esc(n)+'"'+dis+'>Sì</button><button type="button" class="btn sm" data-act="spRmNo">No</button>'
+        :'<button type="button" class="btn sm" data-act="spRename" data-p="'+esc(n)+'">Rinomina</button><button type="button" class="btn sm" data-act="spAskRm" data-p="'+esc(n)+'">Togli</button>';
+      return'<div class="afine'+(i%2===0&&i?" pairstart":"")+'"><div style="min-width:0"><span class="tn sm num">'+(i+1)+'</span> <b>'+esc(n)+'</b>'+(isCur?' <span class="pill ok">Prossimo</span>':'')+(ab?' <span class="pill late">Assente</span>':'')+'</div>'+
+        '<div class="acts"><button type="button" class="btn sm '+(ab?"accent":"")+'" data-act="spAbs" data-p="'+esc(n)+'"'+dis+'>'+(ab?"Segna presente":"Segna assente")+'</button>'+
+        '<button type="button" class="btn sm" data-act="spUp" data-p="'+esc(n)+'" aria-label="Sposta su"'+(i===0?" disabled":dis)+'>↑</button><button type="button" class="btn sm" data-act="spDown" data-p="'+esc(n)+'" aria-label="Sposta giù"'+(i===sp.coda.length-1?" disabled":dis)+'>↓</button>'+rm+'</div></div>';
+    }).join("")+'</div><p class="hint">Le coppie sono le persone a due a due nella fila. Dopo “Pulizia fatta” chi ha pulito va in fondo e le assenze si azzerano.</p></form>';
+  h+='<div class="card" style="margin-top:16px"><h2>Storico</h2>'+(state.spHist.length?state.spHist.map(function(r){
+    return'<div class="afine"><div style="min-width:0"><b>'+fmtD(r.data)+'</b> · '+(r.puliti||[]).map(esc).join(" & ")+((r.assenti||[]).length?'<div class="fwhy">Assenti: '+r.assenti.map(esc).join(", ")+'</div>':'')+'</div></div>';
+  }).join(""):'<p class="hint">Nessuna pulizia registrata.</p>')+'</div>';
+  return h;
+}
 function viewAdmin(){
-  var sub=[["nuova",ui.editId?"Modifica multa":"Nuova multa"],["elenco","Tutte le multe ("+state.fines.length+")"],["giocatori","Giocatori ("+state.players.length+")"],["accesso","Password"]];
+  var sub=[["nuova",ui.editId?"Modifica multa":"Nuova multa"],["elenco","Tutte le multe ("+state.fines.length+")"],["giocatori","Giocatori ("+state.players.length+")"],["spogliatoi","Spogliatoi"],["accesso","Password"]];
   var h='<div class="subtabs">'+sub.map(function(s){return'<button class="chip" aria-pressed="'+(ui.atab===s[0])+'" data-act="atab" data-v="'+s[0]+'">'+s[1]+'</button>'}).join("")+'</div>';
   if(ui.atab==="nuova")h+=fineForm();
   else if(ui.atab==="elenco")h+=adminList();
   else if(ui.atab==="giocatori")h+=adminPlayers();
+  else if(ui.atab==="spogliatoi")h+=adminSp();
   else h+=adminPassword();
   return h;
 }
@@ -423,6 +507,7 @@ function render(){
   if(!body){
     if(ui.view==="cronologia")body=viewChrono();
     else if(ui.view==="regolamento")body=viewRules();
+    else if(ui.view==="spogliatoi")body=viewSp();
     else if(ui.view==="gestione"&&ui.admin)body=viewAdmin();
     else body=viewPlayers();
   }else if(ui.view==="regolamento")body=viewRules();
@@ -431,7 +516,7 @@ function render(){
   if(ae&&ae.id&&root.contains(ae)&&/INPUT|SELECT/.test(ae.tagName))keep=ae.id;
   var vals={};root.querySelectorAll("form input:not([type=checkbox]),form select").forEach(function(el){if(el.id)vals[el.id]=el.value});
   var formBefore=root.querySelector("form.card");var formId=formBefore&&formBefore.id;
-  root.innerHTML=header()+'<main class="wrap">'+strip()+payBox()+tabs()+body+'<footer>ASD GaN Milano · Le somme raccolte finanziano solo attività della squadra</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
+  root.innerHTML=header()+'<main class="wrap">'+(ui.view==="spogliatoi"?'<div style="height:4px"></div>':strip())+payBox()+tabs()+body+'<footer>ASD GaN Milano · Le somme raccolte finanziano solo attività della squadra</footer></main>'+loginModal()+(ui.toast?'<div class="toast'+(ui.toastBad?" bad":"")+'" role="status">'+esc(ui.toast)+'</div>':'');
   var formAfter=root.querySelector("form.card");
   if(formAfter&&formAfter.id===formId&&ui.keepForm){Object.keys(vals).forEach(function(id){var el=document.getElementById(id);if(el)el.value=vals[id]})}
   ui.keepForm=false;
@@ -467,6 +552,30 @@ root.addEventListener("click",function(e){
       if(!newN||newN===oldN){ui.renameP=null;render();break}
       ui.renameP=null;run(sb.from("giocatori").update({nome:newN}).eq("nome",oldN),"Giocatore rinominato.");break;
     case"rmPl":run(sb.from("giocatori").delete().eq("nome",el.dataset.p),"Giocatore rimosso.");break;
+    case"spDone":
+      var pl=spPlan();if(!pl.cur.length)break;
+      run(sb.rpc("spogliatoi_fatto",{p_puliti:pl.cur,p_assenti:pl.absent,p_coda:pl.newCoda}),"Pulizia registrata: "+pl.cur.join(" & ")+".");break;
+    case"spUndo":run(sb.rpc("spogliatoi_annulla"),"Ultima pulizia annullata.");break;
+    case"spAbs":
+      var nA=el.dataset.p,asA=state.sp.assenti.slice(),iA=asA.indexOf(nA);
+      if(iA>=0)asA.splice(iA,1);else asA.push(nA);
+      spSave(state.sp.coda,asA,iA>=0?nA+" segnato presente.":nA+" segnato assente.");break;
+    case"spUp":case"spDown":
+      var cM=state.sp.coda.slice(),iM=cM.indexOf(el.dataset.p),jM=a==="spUp"?iM-1:iM+1;
+      if(iM<0||jM<0||jM>=cM.length)break;
+      var tM=cM[iM];cM[iM]=cM[jM];cM[jM]=tM;spSave(cM,state.sp.assenti);break;
+    case"spRename":ui.spRename=el.dataset.p;ui.spConfirmRm=null;render();var sr=$("#sp-rename");if(sr)sr.focus();break;
+    case"spRenameNo":ui.spRename=null;render();break;
+    case"spRenameOk":
+      var oS=el.dataset.p,nS=clean($("#sp-rename").value);ui.spRename=null;
+      if(!nS||nS===oS){render();break}
+      if(state.sp.coda.indexOf(nS)>=0){toast("C’è già qualcuno con questo nome nella fila.",true);break}
+      spSave(state.sp.coda.map(function(x){return x===oS?nS:x}),state.sp.assenti.map(function(x){return x===oS?nS:x}),"Nome aggiornato.");break;
+    case"spAskRm":ui.spConfirmRm=el.dataset.p;render();break;
+    case"spRmNo":ui.spConfirmRm=null;render();break;
+    case"spRm":
+      var nR=el.dataset.p;ui.spConfirmRm=null;
+      spSave(state.sp.coda.filter(function(x){return x!==nR}),state.sp.assenti.filter(function(x){return x!==nR}),nR+" tolto dalla fila.");break;
   }
 });
 root.addEventListener("change",function(e){
@@ -518,6 +627,11 @@ root.addEventListener("submit",function(e){
     var n=clean($("#pl-new").value);if(!n)return;
     if(state.players.indexOf(n)>=0){toast("Questo giocatore è già in rosa.",true);return}
     run(sb.from("giocatori").insert({nome:n}),n+" aggiunto alla rosa.");
+  }
+  else if(id==="sp-form"){
+    var nN=clean($("#sp-new").value);if(!nN)return;
+    if(state.sp.coda.indexOf(nN)>=0){toast("C’è già qualcuno con questo nome nella fila.",true);return}
+    spSave(state.sp.coda.concat([nN]),state.sp.assenti,nN+" aggiunto in fondo alla fila.");
   }
   else if(id==="pw-form"){
     var p1=$("#c-pw").value,p2=$("#c-pw2").value,ce=$("#c-err");
