@@ -80,7 +80,6 @@ button{cursor:pointer}
 .turn .amp,.afine .amp{color:var(--orange-ink)}
 .tn{font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--muted);min-width:24px;text-align:center}
 .tn.sm{font-size:16px;min-width:20px;display:inline-block}
-.afine.pairstart{border-top:2px solid var(--line)}
 .tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:4px;margin:20px 0 14px;overflow-x:auto}
 .tab{flex:1;border:0;background:transparent;border-radius:9px;padding:9px 12px;font-weight:600;color:var(--muted);white-space:nowrap}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -267,9 +266,12 @@ function loadSp(){
 function spPlan(){
   var coda=state.sp.coda,ass=state.sp.assenti,cur=[];
   coda.forEach(function(n){if(cur.length<2&&ass.indexOf(n)<0)cur.push(n)});
-  var rest=coda.filter(function(n){return cur.indexOf(n)<0}),next=[];
-  for(var i=0;i<rest.length;i+=2)next.push(rest.slice(i,i+2));
-  return{cur:cur,next:next,newCoda:rest.concat(cur),absent:ass.filter(function(n){return coda.indexOf(n)>=0})};
+  var rest=coda.filter(function(n){return cur.indexOf(n)<0}),newCoda=rest.concat(cur),next=[];
+  // simulate the following turns the same way "Pulizia fatta" does (first two go to the back),
+  // so with an odd number of people the pairs shift by one each round and nobody cleans alone
+  var q=newCoda.slice(),turns=Math.ceil(coda.length/2)-1;
+  for(var i=0;i<turns&&q.length>=2;i++){var p=q.slice(0,2);next.push(p);q=q.slice(2).concat(p)}
+  return{cur:cur,next:next,newCoda:newCoda,absent:ass.filter(function(n){return coda.indexOf(n)>=0})};
 }
 function spSave(coda,assenti,msg){
   return run(sb.from("spogliatoi_stato").update({coda:coda,assenti:assenti,updated_at:new Date().toISOString()}).eq("id",1),msg);
@@ -407,10 +409,10 @@ function viewSp(){
   if(pl.next.length){
     h+='<div class="month" style="margin-top:20px"><span>Turni successivi</span></div><ol class="turns">'+pl.next.map(function(p,i){
       var rec=p.some(function(n){return pl.absent.indexOf(n)>=0});
-      return'<li class="turn"><span class="tn num">'+(i+2)+'</span><span class="tp">'+pairNames(p)+(p.length<2?' <span class="muted">(da solo)</span>':'')+'</span>'+(rec?'<span class="pill due">Recupero</span>':'')+'</li>';
+      return'<li class="turn"><span class="tn num">'+(i+2)+'</span><span class="tp">'+pairNames(p)+'</span>'+(rec?'<span class="pill due">Recupero</span>':'')+'</li>';
     }).join("")+'</ol>';
   }
-  return h+'<p class="hint">Dopo l’ultimo turno si ricomincia da capo. Se qualcuno è assente, pulisce il successivo in lista e l’assente recupera la volta dopo.</p>';
+  return h+'<p class="hint">La lista gira di continuo e si pulisce sempre in coppia: se le persone sono dispari, a ogni giro le coppie scorrono di un posto. Se qualcuno è assente, pulisce il successivo in lista e l’assente recupera la volta dopo.</p>';
 }
 
 /* ---------- admin ---------- */
@@ -429,10 +431,10 @@ function adminSp(){
       var rm=ui.spConfirmRm===n
         ?'<span class="muted" style="font-size:13px">Togliere?</span><button type="button" class="btn sm danger" data-act="spRm" data-p="'+esc(n)+'"'+dis+'>Sì</button><button type="button" class="btn sm" data-act="spRmNo">No</button>'
         :'<button type="button" class="btn sm" data-act="spRename" data-p="'+esc(n)+'">Rinomina</button><button type="button" class="btn sm" data-act="spAskRm" data-p="'+esc(n)+'">Togli</button>';
-      return'<div class="afine'+(i%2===0&&i?" pairstart":"")+'"><div style="min-width:0"><span class="tn sm num">'+(i+1)+'</span> <b>'+esc(n)+'</b>'+(isCur?' <span class="pill ok">Prossimo</span>':'')+(ab?' <span class="pill late">Assente</span>':'')+'</div>'+
+      return'<div class="afine"><div style="min-width:0"><span class="tn sm num">'+(i+1)+'</span> <b>'+esc(n)+'</b>'+(isCur?' <span class="pill ok">Prossimo</span>':'')+(ab?' <span class="pill late">Assente</span>':'')+'</div>'+
         '<div class="acts"><button type="button" class="btn sm '+(ab?"accent":"")+'" data-act="spAbs" data-p="'+esc(n)+'"'+dis+'>'+(ab?"Segna presente":"Segna assente")+'</button>'+
         '<button type="button" class="btn sm" data-act="spUp" data-p="'+esc(n)+'" aria-label="Sposta su"'+(i===0?" disabled":dis)+'>↑</button><button type="button" class="btn sm" data-act="spDown" data-p="'+esc(n)+'" aria-label="Sposta giù"'+(i===sp.coda.length-1?" disabled":dis)+'>↓</button>'+rm+'</div></div>';
-    }).join("")+'</div><p class="hint">Le coppie sono le persone a due a due nella fila. Dopo “Pulizia fatta” chi ha pulito va in fondo e le assenze si azzerano.</p></form>';
+    }).join("")+'</div><p class="hint">Puliscono sempre i primi due presenti della fila. Dopo “Pulizia fatta” chi ha pulito va in fondo e le assenze si azzerano; con un numero dispari le coppie scorrono da sole.</p></form>';
   h+='<div class="card" style="margin-top:16px"><h2>Storico</h2>'+(state.spHist.length?state.spHist.map(function(r){
     return'<div class="afine"><div style="min-width:0"><b>'+fmtD(r.data)+'</b> · '+(r.puliti||[]).map(esc).join(" & ")+((r.assenti||[]).length?'<div class="fwhy">Assenti: '+r.assenti.map(esc).join(", ")+'</div>':'')+'</div></div>';
   }).join(""):'<p class="hint">Nessuna pulizia registrata.</p>')+'</div>';
