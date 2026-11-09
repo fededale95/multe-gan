@@ -1,7 +1,7 @@
 {
-  "name": "Multe GAN",
-  "short_name": "Multe GAN",
-  "description": "Cassa multe della squadra GAN Open C1",
+  "name": "GAN Open C1",
+  "short_name": "GAN Open C1",
+  "description": "Multe, turni spogliatoi e certificati medici della squadra GAN Open C1",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
