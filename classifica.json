@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-10T10:33:51+00:00",
+ "aggiornata": "2026-11-10T19:48:08+00:00",
  "righe": [
   {
    "pos": 1,
@@ -48,28 +48,28 @@
   {
    "pos": 4,
    "squadra": "OSGM ASD",
-   "pt": 9,
-   "g": 5,
+   "pt": 10,
+   "g": 6,
    "v": 3,
    "p": 2,
-   "n": 0,
+   "n": 1,
    "pen": 0,
-   "gf": 21,
-   "gs": 15,
+   "gf": 23,
+   "gs": 17,
    "zona": "",
    "ufficiosa": true
   },
   {
    "pos": 5,
    "squadra": "LEO TEAM BIANCA",
-   "pt": 9,
-   "g": 5,
+   "pt": 10,
+   "g": 6,
    "v": 3,
    "p": 2,
-   "n": 0,
+   "n": 1,
    "pen": 0,
-   "gf": 16,
-   "gs": 15,
+   "gf": 18,
+   "gs": 17,
    "zona": "",
    "ufficiosa": true
   },
