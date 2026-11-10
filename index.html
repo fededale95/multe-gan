@@ -210,6 +210,8 @@ button{cursor:pointer}
 .pill.none{background:var(--surface-2);color:var(--muted)}
 .cedit{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cedit input[type=date]{width:auto;padding:6px 9px}
+.clink{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.clink select{width:auto;max-width:100%;padding:6px 9px}
 
 .tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:4px;margin:20px 0 14px;overflow-x:auto}
 .tab{flex:1;border:0;background:transparent;border-radius:9px;padding:9px 12px;font-weight:600;color:var(--muted);white-space:nowrap}
@@ -410,7 +412,7 @@ function loadSp(){
   }).catch(function(e){ui.spErr=(e&&e.message)||"errore di rete"});
 }
 function loadCert(){
-  return sb.from("certificati").select("nome,scadenza").order("nome").then(function(r){
+  return sb.from("certificati").select("*").order("nome").then(function(r){
     if(r.error)throw r.error;state.cert=r.data||[];ui.certErr="";
   }).catch(function(e){ui.certErr=(e&&e.message)||"errore di rete"});
 }
@@ -549,10 +551,12 @@ function reminderText(player,fines){
   t+="Grazie! 💚🧡";
   return t;
 }
-function waLink(player,fines,label){
-  var n=state.tel[player];
+function waLink(player,fines,label){return waBtn(player,reminderText(player,fines),label)}
+function waBtn(player,text,label){
+  var n=player&&state.tel[player];
+  if(!player)return'<span class="wabtn off" title="Scegli il soprannome per usare il suo numero">'+WA_ICON+'Nessun numero</span>';
   if(!n)return'<span class="wabtn off" title="Aggiungi il numero di '+esc(player)+' nella scheda Giocatori">'+WA_ICON+'Nessun numero</span>';
-  return'<a class="wabtn" href="https://wa.me/'+n+'?text='+encodeURIComponent(reminderText(player,fines))+'" target="_blank" rel="noopener">'+WA_ICON+esc(label)+'</a>';
+  return'<a class="wabtn" href="https://wa.me/'+n+'?text='+encodeURIComponent(text)+'" target="_blank" rel="noopener">'+WA_ICON+esc(label)+'</a>';
 }
 function ensurePlayer(name){
   if(state.players.indexOf(name)>=0)return Promise.resolve({});
@@ -880,6 +884,24 @@ function adminCal(){
 }
 
 /* ---------- certificates ---------- */
+// WhatsApp text for an expiring / expired medical certificate
+function certReminderText(player,c,s){
+  var d=parseD(c.scadenza),ds=fmtD(c.scadenza);if(d.getFullYear()===parseD(today()).getFullYear())ds=ds.replace(/ \d{4}$/,"");
+  var art=elid(d.getDate())?"l’":"il ";
+  var t="Ciao "+player+"! 👋\n";
+  if(s.k==="late")t+="Ti ricordo che il tuo certificato medico è scaduto "+art+ds+". Senza certificato valido non si può giocare.\n";
+  else t+="Ti ricordo che il tuo certificato medico scade "+(s.days===0?"oggi ("+ds+")":art+ds+" (tra "+s.days+(s.days===1?" giorno)":" giorni)"))+". Senza certificato valido non si può giocare.\n";
+  return t+"Ricordati di chiedere in società il modulo per la richiesta della visita medica.\nGrazie! 💚🧡";
+}
+// captain only: nickname link (to reuse the phone number) + reminder button
+function certLink(c,s){
+  var hasCol=Object.prototype.hasOwnProperty.call(c,"giocatore"),dis=ui.busy?" disabled":"";
+  if(!hasCol)return"";
+  var sel='<select data-certp="'+esc(c.nome)+'" aria-label="Soprannome di '+esc(c.nome)+'"'+dis+'><option value="">— soprannome —</option>'+
+    state.players.slice().sort(function(a,b){return a.localeCompare(b,"it")}).map(function(p){return'<option'+(p===c.giocatore?" selected":"")+'>'+esc(p)+'</option>'}).join("")+'</select>';
+  var wa=(s.k==="soon"||s.k==="late")?waBtn(c.giocatore,c.giocatore?certReminderText(c.giocatore,c,s):"","Sollecita"):"";
+  return'<div class="clink">'+sel+wa+'</div>';
+}
 function certUnavailable(){
   return'<div class="empty"><strong>Certificati non disponibili</strong>Non riesco a leggere i certificati medici ('+esc(ui.certErr)+').</div>';
 }
@@ -891,7 +913,7 @@ function certRow(x,edit){
       (ui.certConfirmRm===c.nome?'<span class="muted" style="font-size:13px">Togliere?</span><button class="btn sm danger" data-act="certRm" data-p="'+esc(c.nome)+'"'+dis+'>Sì</button><button class="btn sm" data-act="certRmNo">No</button>'
         :'<button class="btn sm" data-act="certAskRm" data-p="'+esc(c.nome)+'">Togli</button>')+'</div>'
     :'<span class="pill '+(s.k==="ok"?"ok":s.k==="soon"?"due":s.k==="late"?"late":"none")+'">'+s.label+'</span>';
-  return'<div class="crow c-'+s.k+'"><div style="min-width:0"><div class="cn">'+esc(c.nome)+'</div><div class="cd">'+(c.scadenza?"Scadenza "+fmtD(c.scadenza)+" · "+s.txt:s.txt)+'</div></div>'+right+
+  return'<div class="crow c-'+s.k+'"><div style="min-width:0"><div class="cn">'+esc(c.nome)+'</div><div class="cd">'+(c.scadenza?"Scadenza "+fmtD(c.scadenza)+" · "+s.txt:s.txt)+'</div></div>'+right+(edit?certLink(c,s):"")+
     '<div class="cbar"><i style="width:'+w+'%"></i></div></div>';
 }
 function certStats(){
@@ -909,7 +931,7 @@ function adminCert(){
   if(ui.certErr)return certUnavailable()+'<p class="hint">Se non l’hai ancora fatto, esegui lo script dei certificati nell’SQL Editor di Supabase.</p>';
   var dis=ui.busy?" disabled":"";
   return'<form class="card" id="cert-form" autocomplete="off"><h2>Aggiungi giocatore</h2><div class="row"><input type="text" id="cert-new" maxlength="40" placeholder="Cognome" style="flex:1 1 180px" aria-label="Nome giocatore"><input type="date" id="cert-new-date" style="flex:0 1 170px" aria-label="Scadenza certificato (facoltativa)"><button class="btn primary" type="submit"'+dis+'>Aggiungi</button></div><p class="hint">La data si può lasciare vuota e inserire dopo.</p></form>'+
-    '<div class="card" style="margin-top:16px"><h2>Scadenze ('+state.cert.length+')</h2><p class="hint" style="margin:0 0 10px">Cambia la data e viene salvata subito. Per togliere una data, svuota il campo.</p><div class="list">'+
+    '<div class="card" style="margin-top:16px"><h2>Scadenze ('+state.cert.length+')</h2><p class="hint" style="margin:0 0 10px">Cambia la data e viene salvata subito. Per togliere una data, svuota il campo. Il soprannome collega il giocatore al suo cellulare: su chi è in scadenza o scaduto compare “Sollecita”, che apre WhatsApp con il messaggio già scritto.</p><div class="list">'+
     state.cert.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,"it")}).map(function(c){return certRow({c:c,s:certStatus(c)},true)}).join("")+'</div></div>';
 }
 
@@ -1109,7 +1131,11 @@ root.addEventListener("change",function(e){
     var withCol=state.gare.filter(function(g){return g.avversario===opp&&g.colori_avv})[0];if(withCol&&!$("#c-col").value)$("#c-col").value=withCol.colori_avv;
     return;
   }
-  if(t.dataset&&t.dataset.cert!=null){
+  if(t.dataset&&t.dataset.certp!=null){
+    var cpn=t.dataset.certp,cpv=t.value||null;
+    run(sb.from("certificati").update({giocatore:cpv}).eq("nome",cpn),cpv?cpn+" collegato a "+cpv+".":"Collegamento di "+cpn+" tolto.");
+  }
+  else if(t.dataset&&t.dataset.cert!=null){
     var cn=t.dataset.cert,cv=t.value||null;
     run(sb.from("certificati").update({scadenza:cv,updated_at:new Date().toISOString()}).eq("nome",cn),cv?"Scadenza di "+cn+" salvata: "+fmtD(cv)+".":"Data di "+cn+" tolta.");
   }
