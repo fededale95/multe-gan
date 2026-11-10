@@ -1,0 +1,28 @@
+name: Notifica compleanni su ntfy
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # ogni giorno verso le 8 (le 9 con l'ora legale); GitHub puo' ritardare qualche minuto
+  workflow_dispatch:       # avvio a mano da "Actions"
+    inputs:
+      prova:
+        description: "Manda una notifica di prova anche se oggi non compie gli anni nessuno"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  notifica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Controlla i compleanni di oggi e avvisa su ntfy
+        env:
+          SUPABASE_URL: https://xtrqqyrjjjmtwylxqndx.supabase.co
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0cnFxeXJqamptdHd5bHhxbmR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5NjA0OTYsImV4cCI6MjEwOTUzNjQ5Nn0.PJpvtH5nishQfsP5PjubNRJc4rOUZNPccw6SO1WCQTQ
+          NTFY_TOPIC: ganopenc1
+          PROVA: ${{ inputs.prova && '1' || '0' }}
+        run: python3 .github/scripts/compleanni_ntfy.py
