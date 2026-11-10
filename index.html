@@ -83,7 +83,7 @@ button{cursor:pointer}
 .tn.sm{font-size:16px;min-width:20px;display:inline-block}
 /* home */
 .home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
-@media (max-width:760px){.home{grid-template-columns:minmax(0,1fr);gap:10px;margin-top:16px}.home .tile{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:14px 16px}.home .tile .tt{font-size:24px}.home .tile .tl{flex-basis:100%;min-height:0}.home .tile .go{display:none}.home .tile .ic{width:40px;height:40px}}
+@media (max-width:760px){.home{grid-template-columns:minmax(0,1fr);gap:8px;margin-top:14px}.home .tile{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:9px 16px}.home .tile .tt{font-size:23px}.home .tile .tl{flex-basis:100%;min-height:0}.home .tile .go{display:none}.home .tile .ic{width:34px;height:34px}.home .tile .ic svg{width:21px;height:21px}.home .tile .mapbtn.big{padding:10px 14px}}
 .tile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);border-top:6px solid var(--green);min-width:0;transition:transform .12s}
 .tile:hover{transform:translateY(-2px)}
 .tile:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
@@ -118,6 +118,16 @@ button{cursor:pointer}
 .tile .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--ok-soft);color:var(--green-ink)}
 .tile.sp .ic{background:var(--orange-soft);color:var(--orange-ink)}
 .tile.cert .ic{background:var(--danger-soft);color:var(--danger)}
+.tile.bd{border-top-color:var(--orange)}
+.tile.bd .ic{background:var(--orange-soft);color:var(--orange-ink)}
+.bdrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 14px 8px 8px}
+.bdrow .bdd{width:48px;text-align:center;background:var(--orange-soft);color:var(--orange-ink);border-radius:9px;padding:4px 0;font-size:12px;text-transform:uppercase;font-weight:700;letter-spacing:.04em;line-height:1.1}
+.bdrow .bdd b{display:block;font-family:var(--f-display);font-size:22px;font-weight:800}
+.bdrow .bdn{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.bdrow .bdw{font-size:13px;color:var(--muted);white-space:nowrap}
+.bdrow.today{border-color:var(--orange);background:var(--orange-soft)}
+.bdrow.today .bdd{background:var(--orange);color:#1f1200}
+.bdrow.today .bdw{color:var(--orange-ink);font-weight:700}
 .tile .ic svg{width:26px;height:26px}
 .tile .tt{font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1;text-transform:uppercase}
 .tile .tl{font-size:14px;color:var(--muted);min-height:2.6em}
@@ -360,11 +370,11 @@ var ls={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}
 var configured=CFG.SUPABASE_URL&&CFG.SUPABASE_URL.indexOf("INSERISCI")<0&&CFG.SUPABASE_ANON_KEY&&CFG.SUPABASE_ANON_KEY.indexOf("INSERISCI")<0&&window.supabase;
 var sb=configured?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY):null;
 
-var state={players:[],fines:[],sp:{coda:[],assenti:[]},spHist:[],cert:[],gare:[],gol:[],cla:null,tel:{},bday:[],compl:{}};
-var ui={section:"home",view:"",admin:false,telEdit:null,bdEdit:null,complErr:"",telErr:"",claErr:"",atab:"nuova",calErr:"",golErr:"",golOpen:null,calEdit:null,calConfirmRm:null,calAll:false,spRename:null,spConfirmRm:null,spErr:"",certErr:"",certConfirmRm:null,fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
+var state={players:[],fines:[],sp:{coda:[],assenti:[]},spHist:[],cert:[],gare:[],gol:[],cla:null,tel:{},bday:[],compl:{},bdl:[]};
+var ui={section:"home",view:"",admin:false,telEdit:null,bdEdit:null,complErr:"",bdlErr:"",telErr:"",claErr:"",atab:"nuova",calErr:"",golErr:"",golOpen:null,calEdit:null,calConfirmRm:null,calAll:false,spRename:null,spConfirmRm:null,spErr:"",certErr:"",certConfirmRm:null,fPlayer:"",fStatus:"tutte",open:null,editId:null,confirmDel:null,renameP:null,login:false,loginErr:"",loading:true,loadErr:"",busy:false,toast:"",toastBad:false};
 // sections live in the URL hash (#multe, #spogliatoi, #certificati, #account) so the phone's back button returns home
-var SECTIONS={multe:["giocatori","cronologia","regolamento"],spogliatoi:["turni"],certificati:["elenco"],calendario:["gare","marcatori"],classifica:["tabella"],account:["password"]};
-var TITLES={multe:"Multe",spogliatoi:"Spogliatoi",certificati:"Certificati",calendario:"Calendario",classifica:"Classifica",account:"Account"};
+var SECTIONS={multe:["giocatori","cronologia","regolamento"],spogliatoi:["turni"],certificati:["elenco"],calendario:["gare","marcatori"],classifica:["tabella"],compleanni:["elenco"],account:["password"]};
+var TITLES={multe:"Multe",spogliatoi:"Spogliatoi",certificati:"Certificati",calendario:"Calendario",classifica:"Classifica",compleanni:"Compleanni",account:"Account"};
 function readHash(){
   var h=(location.hash||"").replace("#","");
   ui.section=SECTIONS[h]&&(h!=="account"||ui.admin)?h:"home";
@@ -396,7 +406,8 @@ function load(){
     loadGare(),
     loadClassifica(),
     loadTel(),
-    loadBday()
+    loadBday(),
+    loadBdl()
   ]).then(function(res){
     if(res[0].error)throw res[0].error;if(res[1].error)throw res[1].error;
     state.players=res[0].data.map(function(r){return r.nome});
@@ -526,6 +537,35 @@ function loadCompl(){
     if(r.error)throw r.error;var m={};(r.data||[]).forEach(function(x){m[x.nome]={g:x.giorno,m:x.mese}});state.compl=m;ui.complErr="";
   }).catch(function(e){state.compl={};ui.complErr=(e&&e.message)||"errore"});
 }
+function loadBdl(){
+  if(!sb)return Promise.resolve();
+  return sb.rpc("compleanni_elenco").then(function(r){
+    if(r.error)throw r.error;state.bdl=(r.data||[]).map(function(x){return{nome:x.nome,g:x.giorno,m:x.mese}});ui.bdlErr="";
+  }).catch(function(e){state.bdl=[];ui.bdlErr=(e&&e.message)||"errore di rete"});
+}
+// days until the next birthday (0 = today); 29 Feb is celebrated on 28 Feb in non-leap years
+function bdNext(b){
+  var t=parseD(today()),y=t.getFullYear();
+  function at(yy){var g=b.g;if(b.m===2&&g===29&&new Date(yy,1,29).getMonth()!==1)g=28;return new Date(yy,b.m-1,g)}
+  var d=at(y);if(d<t)d=at(y+1);
+  return Math.round((d-t)/864e5);
+}
+function bdSorted(){return state.bdl.map(function(b){return{b:b,d:bdNext(b)}}).sort(function(a,c){return a.d-c.d||a.b.nome.localeCompare(c.b.nome,"it")})}
+function bdWhen(d){return d===0?"Oggi! 🎉":d===1?"domani":"tra "+d+" giorni"}
+function viewBday(){
+  if(ui.bdlErr)return'<div class="empty"><strong>Compleanni non disponibili</strong>Non riesco a leggere i compleanni ('+esc(ui.bdlErr)+').'+(ui.admin?' Se non l’hai ancora fatto, esegui lo script dell’elenco compleanni nell’SQL Editor di Supabase.':'')+'</div>';
+  if(!state.bdl.length)return'<div class="empty"><strong>Nessun compleanno</strong>Il capitano non ha ancora inserito i compleanni.</div>';
+  var list=bdSorted(),html="";
+  list.forEach(function(x){
+    var b=x.b;
+    html+='<div class="bdrow'+(x.d===0?" today":"")+'"><div class="bdd"><b>'+b.g+'</b>'+MONTHS[b.m-1]+'</div><div class="bdn">'+esc(b.nome)+'</div><div class="bdw">'+bdWhen(x.d)+'</div></div>';
+  });
+  var known={};state.bdl.forEach(function(b){known[b.nome]=1});
+  var miss=ui.admin?state.players.filter(function(p){return!known[p]}):[];
+  return'<div class="list" style="margin-top:4px">'+html+'</div>'+
+    '<p class="hint">In ordine dal prossimo compleanno. Il giorno del compleanno arriva anche una notifica sul canale ntfy <b>ganopenc1</b>.'+
+    (ui.admin?' I compleanni si inseriscono e si modificano da Multe → Gestione → Giocatori.'+(miss.length?' Mancano: '+miss.map(esc).join(", ")+'.':''):'')+'</p>';
+}
 function fmtBday(c){return c?c.g+" "+MONTHS[c.m-1]:""}
 function saveBday(name,raw){
   if(!raw)return run(sb.from("compleanni").delete().eq("nome",name),"Compleanno di "+name+" tolto.");
@@ -625,6 +665,7 @@ var ICONS={
   spogliatoi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16"/><path d="M12 3v18M2 21h20M9 11v2M15 11v2"/></svg>',
   classifica:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
   calendario:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="16" r="2.5"/></svg>',
+  compleanni:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21h16M5 21v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7"/><path d="M5 16c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0"/><path d="M12 12V8"/><path d="M12 5.5c.9-.8.9-1.7 0-2.5-.9.8-.9 1.7 0 2.5z"/></svg>',
   certificati:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></svg>'
 };
 /* ---------- install button (phones, in the browser only) ---------- */
@@ -662,10 +703,12 @@ function viewHome(){
   var n=certCounts(),certL=wait||(ui.certErr?"Certificati non disponibili":(!state.cert.length?"Nessun giocatore inserito":
     (n.late||n.soon||n.none?[n.late?'<b>'+n.late+'</b> scadut'+(n.late===1?"o":"i"):"",n.soon?'<b>'+n.soon+'</b> in scadenza':"",n.none?'<b>'+n.none+'</b> mancant'+(n.none===1?"e":"i"):""].filter(Boolean).join(" · "):"Tutti validi")));
   var ng=nextGame(),calL=wait||(ui.calErr?"Calendario non disponibile":(!state.gare.length?"Nessuna gara inserita":(ng?'Prossima: <b>'+fmtD(ng.data).replace(/ \d{4}$/,"")+'</b> · '+(ng.casa?"in casa con ":"in trasferta a ")+esc(ng.avversario):"Stagione conclusa")));
+  var bl=state.bdl.length?bdSorted():[],bt=bl.filter(function(x){return x.d===0});
+  var bdL=wait||(ui.bdlErr?"Compleanni non disponibili":(!bl.length?"Nessun compleanno inserito":(bt.length?'Oggi: <b>'+esc(joinNames(bt.map(function(x){return x.b.nome})))+'</b> 🎉':'Prossimo: <b>'+esc(bl[0].b.nome)+'</b> · '+bl[0].b.g+' '+MONTHS[bl[0].b.m-1]+' ('+bdWhen(bl[0].d)+')')));
   var us=claUs(),claL=wait||(ui.claErr?"Classifica non disponibile":(us?'<b>'+us.pos+'° posto</b> · '+us.pt+' punti in '+us.g+' gare':"Classifica del Girone D"));
   function tile(s,cls,label,line,extra){return'<div class="tile '+cls+'" role="button" tabindex="0" data-act="go" data-s="'+s+'"><span class="ic">'+ICONS[s]+'</span><span class="tt">'+label+'</span><span class="tl">'+line+'</span>'+(extra||'')+'<span class="go">Apri →</span></div>'}
   var calMaps=!wait&&ng&&ng.indirizzo?'<span class="tmap"><a class="mapbtn big" href="'+mapsUrl(ng)+'" target="_blank" rel="noopener">'+PIN+'Apri in Maps · '+(ng.casa?'campo di casa':esc(ng.campo||ng.avversario))+'</a></span>':'';
-  return'<nav class="home" aria-label="Sezioni">'+installButton()+bdayBanner()+tile("calendario","cal","Calendario gare",calL,calMaps)+tile("classifica","cla","Classifica",claL)+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+'</nav>'+
+  return'<nav class="home" aria-label="Sezioni">'+installButton()+bdayBanner()+tile("calendario","cal","Calendario gare",calL,calMaps)+tile("classifica","cla","Classifica",claL)+tile("multe","",'Multe',multeL)+tile("spogliatoi","sp","Spogliatoi",spL)+tile("certificati","cert","Certificati medici",certL)+tile("compleanni","bd","Compleanni",bdL)+'</nav>'+
     (ui.admin?'<div class="home-admin">Sei entrato come admin.<button class="btn sm" data-act="go" data-s="account">Cambia password</button></div>':'');
 }
 function strip(){
@@ -1049,6 +1092,7 @@ function render(){
   else if(s==="certificati")body=mg?adminCert():viewCert();
   else if(s==="calendario")body=mg?adminCal():v==="marcatori"?viewScorers():viewCal();
   else if(s==="classifica")body=viewClassifica();
+  else if(s==="compleanni")body=viewBday();
   else body=adminPassword();
   // keep focus/values of an open form across a toast re-render
   var keep=null,ae=document.activeElement;
