@@ -1,0 +1,40 @@
+name: Aggiorna classifica e risultati dal CSI
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # ogni 3 ore
+  workflow_dispatch:          # avvio a mano da "Actions"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: csi-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Leggi classifica e risultati dal sito CSI Milano
+        env:
+          SUPABASE_URL: https://xtrqqyrjjjmtwylxqndx.supabase.co
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0cnFxeXJqamptdHd5bHhxbmR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5NjA0OTYsImV4cCI6MjEwOTUzNjQ5Nn0.PJpvtH5nishQfsP5PjubNRJc4rOUZNPccw6SO1WCQTQ
+          CSI_BOT_TOKEN: ${{ secrets.CSI_BOT_TOKEN }}
+        run: python3 .github/scripts/csi_sync.py
+
+      - name: Salva la classifica se è cambiata
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain classifica.json)" ]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add classifica.json
+            git commit -m "Classifica aggiornata dal CSI"
+            git pull --rebase
+            git push
+          else
+            echo "Classifica invariata."
+          fi
