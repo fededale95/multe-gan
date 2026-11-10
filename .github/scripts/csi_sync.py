@@ -2,7 +2,10 @@
 
 - Classifica del girone -> scritta in classifica.json (letta dalla sezione Classifica dell'app).
 - Risultati delle gare del GAN -> inviati a Supabase, che li salva solo nelle gare
-  ancora senza risultato (i marcatori restano da inserire a mano al capitano).
+  ancora senza risultato.
+- Marcatori del GAN letti dalla pagina della partita -> salvati solo se il capitano
+  non li ha gia' inseriti ("Giocatore non indicato" viene saltato; gli assist sul
+  sito CSI non ci sono e restano da inserire a mano).
 
 Usa solo la libreria standard di Python. Variabili d'ambiente:
   SUPABASE_URL, SUPABASE_ANON_KEY, CSI_BOT_TOKEN (segreto del repository).
@@ -13,6 +16,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import urllib.parse
 import urllib.request
 
@@ -23,6 +27,7 @@ GIRONE = "D"
 SQUADRA_GAN = "1623"  # GAN OPEN C1
 NOME_GAN = "GAN OPEN C1"
 OUT = "classifica.json"
+CSI_BASE = "https://www.csi.milano.it"
 
 
 def csi_post(params):
@@ -76,8 +81,55 @@ def parse_risultati_gan(page):
         m = re.match(r"^\s*(\d+)\s*-\s*(\d+)\s*$", cell_text(punt.group(1)))
         if not m:
             continue  # partita non ancora giocata, rinviata (REC.), ecc.
-        out.append({"codice": cod.group(1), "gol_casa": int(m.group(1)), "gol_ospiti": int(m.group(2))})
+        link = re.search(r'href="(/albo/partite/[^"]+)"', body)
+        out.append({"codice": cod.group(1), "gol_casa": int(m.group(1)), "gol_ospiti": int(m.group(2)),
+                    "_casa": casa == NOME_GAN, "_link": link.group(1) if link else None})
     return out
+
+
+def csi_get(path):
+    req = urllib.request.Request(CSI_BASE + path, headers={"User-Agent": "GAN-Open-C1-app/1.0 (aggiornamento classifica squadra)"})
+    with urllib.request.urlopen(req, timeout=40) as r:
+        return r.read().decode("utf-8", errors="replace")
+
+
+def parse_marcatori_gan(page, gan_in_casa):
+    """Nomi dei marcatori del GAN nell'ordine del sito; None = sezione assente."""
+    blocco = re.search(r'<div class="%s">(.*?)</table>' % ("squadra_casa" if gan_in_casa else "squadra_ospite"), page, flags=re.S)
+    if not blocco:
+        return None
+    nomi = []
+    for tr in re.findall(r"<tr>(.*?)</tr>", blocco.group(1), flags=re.S):
+        a = re.search(r'<a href="/albo/giocatori/[^"]*-%s-[^"]*">(.*?)</a>' % SQUADRA_GAN, tr, flags=re.S)
+        if a:
+            nomi.append(cell_text(a.group(1)))
+    return nomi
+
+
+def tokens(nome):
+    t = unicodedata.normalize("NFKD", nome)
+    t = "".join(c for c in t if not unicodedata.combining(c)).upper()
+    return set(w for w in re.split(r"[^A-Z]+", t) if w)
+
+
+def abbina(nome_csi, rosa):
+    """'LUIGI COLANTUONI' -> 'Colantuoni Luigi' se c'e' un solo giocatore compatibile in rosa."""
+    tc = tokens(nome_csi)
+    cand = [n for n in rosa if tokens(n) and tokens(n) <= tc]
+    if cand:
+        best = max(len(tokens(n)) for n in cand)
+        top = [n for n in cand if len(tokens(n)) == best]
+        if len(top) == 1:
+            return top[0]
+    return nome_csi.title()  # non in rosa (o ambiguo): nome come sul sito CSI
+
+
+def supabase_get(path):
+    url = os.environ["SUPABASE_URL"].rstrip("/") + "/rest/v1/" + path
+    key = os.environ["SUPABASE_ANON_KEY"]
+    req = urllib.request.Request(url, headers={"apikey": key, "Authorization": "Bearer " + key})
+    with urllib.request.urlopen(req, timeout=40) as r:
+        return json.loads(r.read().decode() or "[]")
 
 
 def supabase_rpc(name, payload):
@@ -122,8 +174,25 @@ def main():
         token = os.environ.get("CSI_BOT_TOKEN", "")
         if not token:
             raise RuntimeError("manca il segreto CSI_BOT_TOKEN")
-        n = supabase_rpc("importa_risultati", {"p_token": token, "p_risultati": ris})
-        print("Gare aggiornate nel calendario:", n)
+        # marcatori: leggo la pagina della partita solo se nell'app mancano ancora
+        gare = {g["codice"]: g for g in supabase_get("gare?select=id,codice&codice=not.is.null")}
+        gol = supabase_get("gol?select=gara_id,fonte")
+        rosa = [c["nome"] for c in supabase_get("certificati?select=nome")]
+        for r in ris:
+            gan = r["gol_casa"] if r["_casa"] else r["gol_ospiti"]
+            g = gare.get(r["codice"])
+            if not g or gan == 0 or not r["_link"]:
+                continue
+            righe = [x for x in gol if x["gara_id"] == g["id"]]
+            if any(x["fonte"] != "csi" for x in righe) or len(righe) >= gan:
+                continue  # gia' inseriti dal capitano, o gia' completi
+            nomi = parse_marcatori_gan(csi_get(r["_link"]), r["_casa"])
+            if nomi:
+                r["marcatori"] = [abbina(n, rosa) for n in nomi][:gan]
+                print("Marcatori trovati per", r["codice"], ":", ", ".join(r["marcatori"]))
+        payload = [{k: v for k, v in r.items() if not k.startswith("_")} for r in ris]
+        esito = supabase_rpc("importa_risultati", {"p_token": token, "p_risultati": payload})
+        print("Esito importazione:", esito)
     except Exception as e:  # noqa: BLE001
         errori += 1
         print("ERRORE risultati:", e, file=sys.stderr)
