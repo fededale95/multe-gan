@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-10T19:48:08+00:00",
+ "aggiornata": "2026-11-11T11:05:32+00:00",
  "righe": [
   {
    "pos": 1,
@@ -20,28 +20,28 @@
   {
    "pos": 2,
    "squadra": "PLESIOS VIMO",
-   "pt": 15,
-   "g": 6,
+   "pt": 16,
+   "g": 7,
    "v": 5,
    "p": 1,
-   "n": 0,
+   "n": 1,
    "pen": 0,
-   "gf": 30,
-   "gs": 20,
+   "gf": 31,
+   "gs": 21,
    "zona": "playoff",
    "ufficiosa": true
   },
   {
    "pos": 3,
    "squadra": "SPERANZA - CINISELLO",
-   "pt": 10,
-   "g": 6,
+   "pt": 11,
+   "g": 7,
    "v": 3,
    "p": 2,
-   "n": 1,
+   "n": 2,
    "pen": 0,
-   "gf": 29,
-   "gs": 18,
+   "gf": 30,
+   "gs": 19,
    "zona": "playoff",
    "ufficiosa": true
   },
