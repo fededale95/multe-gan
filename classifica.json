@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-11T19:39:36+00:00",
+ "aggiornata": "2026-11-12T11:24:10+00:00",
  "righe": [
   {
    "pos": 1,
@@ -75,6 +75,20 @@
   },
   {
    "pos": 6,
+   "squadra": "S.CARLO GORGONZOLA",
+   "pt": 9,
+   "g": 7,
+   "v": 3,
+   "p": 4,
+   "n": 0,
+   "pen": 0,
+   "gf": 22,
+   "gs": 24,
+   "zona": "",
+   "ufficiosa": true
+  },
+  {
+   "pos": 7,
    "squadra": "S.CARLO CASORETTO OPEN C",
    "pt": 8,
    "g": 6,
@@ -88,7 +102,7 @@
    "ufficiosa": false
   },
   {
-   "pos": 7,
+   "pos": 8,
    "squadra": "GAN OPEN C1",
    "pt": 7,
    "g": 6,
@@ -102,7 +116,7 @@
    "ufficiosa": false
   },
   {
-   "pos": 8,
+   "pos": 9,
    "squadra": "S.VITTORE",
    "pt": 7,
    "g": 6,
@@ -116,32 +130,18 @@
    "ufficiosa": false
   },
   {
-   "pos": 9,
-   "squadra": "S.CARLO GORGONZOLA",
-   "pt": 6,
-   "g": 6,
-   "v": 2,
-   "p": 4,
-   "n": 0,
-   "pen": 0,
-   "gf": 18,
-   "gs": 21,
-   "zona": "",
-   "ufficiosa": false
-  },
-  {
    "pos": 10,
    "squadra": "SANFRA 'TM",
    "pt": 5,
-   "g": 5,
+   "g": 6,
    "v": 1,
-   "p": 2,
+   "p": 3,
    "n": 2,
    "pen": 0,
-   "gf": 12,
-   "gs": 16,
+   "gf": 15,
+   "gs": 20,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 11,
