@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-12T11:24:10+00:00",
+ "aggiornata": "2026-11-13T19:47:25+00:00",
  "righe": [
   {
    "pos": 1,
@@ -47,6 +47,20 @@
   },
   {
    "pos": 4,
+   "squadra": "S.CARLO CASORETTO OPEN C",
+   "pt": 11,
+   "g": 7,
+   "v": 3,
+   "p": 2,
+   "n": 2,
+   "pen": 0,
+   "gf": 24,
+   "gs": 23,
+   "zona": "",
+   "ufficiosa": true
+  },
+  {
+   "pos": 5,
    "squadra": "OSGM ASD",
    "pt": 10,
    "g": 6,
@@ -60,7 +74,7 @@
    "ufficiosa": true
   },
   {
-   "pos": 5,
+   "pos": 6,
    "squadra": "LEO TEAM BIANCA",
    "pt": 10,
    "g": 6,
@@ -74,7 +88,7 @@
    "ufficiosa": true
   },
   {
-   "pos": 6,
+   "pos": 7,
    "squadra": "S.CARLO GORGONZOLA",
    "pt": 9,
    "g": 7,
@@ -86,20 +100,6 @@
    "gs": 24,
    "zona": "",
    "ufficiosa": true
-  },
-  {
-   "pos": 7,
-   "squadra": "S.CARLO CASORETTO OPEN C",
-   "pt": 8,
-   "g": 6,
-   "v": 2,
-   "p": 2,
-   "n": 2,
-   "pen": 0,
-   "gf": 17,
-   "gs": 21,
-   "zona": "",
-   "ufficiosa": false
   },
   {
    "pos": 8,
@@ -119,15 +119,15 @@
    "pos": 9,
    "squadra": "S.VITTORE",
    "pt": 7,
-   "g": 6,
+   "g": 7,
    "v": 2,
-   "p": 3,
+   "p": 4,
    "n": 1,
    "pen": 0,
-   "gf": 15,
-   "gs": 21,
+   "gf": 17,
+   "gs": 28,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 10,
