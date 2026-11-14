@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-13T19:47:25+00:00",
+ "aggiornata": "2026-11-14T10:33:50+00:00",
  "righe": [
   {
    "pos": 1,
@@ -89,6 +89,20 @@
   },
   {
    "pos": 7,
+   "squadra": "GAN OPEN C1",
+   "pt": 10,
+   "g": 7,
+   "v": 3,
+   "p": 3,
+   "n": 1,
+   "pen": 0,
+   "gf": 17,
+   "gs": 19,
+   "zona": "",
+   "ufficiosa": true
+  },
+  {
+   "pos": 8,
    "squadra": "S.CARLO GORGONZOLA",
    "pt": 9,
    "g": 7,
@@ -100,20 +114,6 @@
    "gs": 24,
    "zona": "",
    "ufficiosa": true
-  },
-  {
-   "pos": 8,
-   "squadra": "GAN OPEN C1",
-   "pt": 7,
-   "g": 6,
-   "v": 2,
-   "p": 3,
-   "n": 1,
-   "pen": 0,
-   "gf": 13,
-   "gs": 16,
-   "zona": "",
-   "ufficiosa": false
   },
   {
    "pos": 9,
@@ -147,15 +147,15 @@
    "pos": 11,
    "squadra": "ASCOT TRIANTE",
    "pt": 4,
-   "g": 6,
+   "g": 7,
    "v": 1,
-   "p": 4,
+   "p": 5,
    "n": 1,
    "pen": 0,
-   "gf": 16,
-   "gs": 33,
+   "gf": 19,
+   "gs": 37,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 12,
