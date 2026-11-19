@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-18T20:37:28+00:00",
+ "aggiornata": "2026-11-19T02:37:14+00:00",
  "righe": [
   {
    "pos": 1,
@@ -34,16 +34,16 @@
   {
    "pos": 3,
    "squadra": "SPERANZA - CINISELLO",
-   "pt": 11,
-   "g": 7,
-   "v": 3,
+   "pt": 14,
+   "g": 8,
+   "v": 4,
    "p": 2,
    "n": 2,
    "pen": 0,
-   "gf": 30,
-   "gs": 19,
+   "gf": 34,
+   "gs": 22,
    "zona": "playoff",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 4,
@@ -77,15 +77,15 @@
    "pos": 6,
    "squadra": "GAN OPEN C1",
    "pt": 10,
-   "g": 7,
+   "g": 8,
    "v": 3,
-   "p": 3,
+   "p": 4,
    "n": 1,
    "pen": 0,
-   "gf": 17,
-   "gs": 19,
+   "gf": 20,
+   "gs": 23,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 7,
