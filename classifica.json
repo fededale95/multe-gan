@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-19T02:37:14+00:00",
+ "aggiornata": "2026-11-19T11:46:38+00:00",
  "righe": [
   {
    "pos": 1,
@@ -20,16 +20,16 @@
   {
    "pos": 2,
    "squadra": "PLESIOS VIMO",
-   "pt": 16,
-   "g": 7,
-   "v": 5,
+   "pt": 19,
+   "g": 8,
+   "v": 6,
    "p": 1,
    "n": 1,
    "pen": 0,
-   "gf": 31,
-   "gs": 21,
+   "gf": 34,
+   "gs": 23,
    "zona": "playoff",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 3,
@@ -161,15 +161,15 @@
    "pos": 12,
    "squadra": "REAL ROMBON",
    "pt": 0,
-   "g": 5,
+   "g": 6,
    "v": 0,
-   "p": 5,
+   "p": 6,
    "n": 0,
    "pen": 0,
-   "gf": 9,
-   "gs": 23,
+   "gf": 11,
+   "gs": 26,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   }
  ]
 }
