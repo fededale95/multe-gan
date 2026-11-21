@@ -1,21 +1,21 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-21T02:22:59+00:00",
+ "aggiornata": "2026-11-21T11:13:08+00:00",
  "righe": [
   {
    "pos": 1,
    "squadra": "PRO LISSONE",
-   "pt": 21,
-   "g": 7,
-   "v": 7,
+   "pt": 24,
+   "g": 8,
+   "v": 8,
    "p": 0,
    "n": 0,
    "pen": 0,
-   "gf": 38,
+   "gf": 39,
    "gs": 9,
    "zona": "promozione",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 2,
@@ -147,15 +147,15 @@
    "pos": 11,
    "squadra": "ASCOT TRIANTE",
    "pt": 4,
-   "g": 7,
+   "g": 8,
    "v": 1,
-   "p": 5,
+   "p": 6,
    "n": 1,
    "pen": 0,
    "gf": 19,
-   "gs": 37,
+   "gs": 38,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 12,
