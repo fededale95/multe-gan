@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-21T11:13:08+00:00",
+ "aggiornata": "2026-11-21T19:21:50+00:00",
  "righe": [
   {
    "pos": 1,
@@ -63,15 +63,15 @@
    "pos": 5,
    "squadra": "LEO TEAM BIANCA",
    "pt": 10,
-   "g": 6,
+   "g": 7,
    "v": 3,
-   "p": 2,
+   "p": 3,
    "n": 1,
    "pen": 0,
-   "gf": 18,
-   "gs": 17,
+   "gf": 21,
+   "gs": 23,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 6,
@@ -132,16 +132,16 @@
   {
    "pos": 10,
    "squadra": "SANFRA 'TM",
-   "pt": 5,
-   "g": 6,
-   "v": 1,
+   "pt": 8,
+   "g": 7,
+   "v": 2,
    "p": 3,
    "n": 2,
    "pen": 0,
-   "gf": 15,
-   "gs": 20,
+   "gf": 21,
+   "gs": 23,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   },
   {
    "pos": 11,
