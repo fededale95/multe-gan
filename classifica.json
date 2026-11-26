@@ -1,7 +1,7 @@
 {
  "girone": "Calcio Open C a 7 - Girone D",
  "fonte": "https://www.csi.milano.it/albo/risultati-calendario-classifiche-squadre.html?campionato=116&q=cla",
- "aggiornata": "2026-11-25T19:21:27+00:00",
+ "aggiornata": "2026-11-26T16:58:58+00:00",
  "righe": [
   {
    "pos": 1,
@@ -61,6 +61,20 @@
   },
   {
    "pos": 5,
+   "squadra": "LEO TEAM BIANCA",
+   "pt": 13,
+   "g": 8,
+   "v": 4,
+   "p": 3,
+   "n": 1,
+   "pen": 0,
+   "gf": 28,
+   "gs": 27,
+   "zona": "",
+   "ufficiosa": true
+  },
+  {
+   "pos": 6,
    "squadra": "GAN OPEN C1",
    "pt": 10,
    "g": 8,
@@ -69,20 +83,6 @@
    "n": 1,
    "pen": 0,
    "gf": 20,
-   "gs": 23,
-   "zona": "",
-   "ufficiosa": false
-  },
-  {
-   "pos": 6,
-   "squadra": "LEO TEAM BIANCA",
-   "pt": 10,
-   "g": 7,
-   "v": 3,
-   "p": 3,
-   "n": 1,
-   "pen": 0,
-   "gf": 21,
    "gs": 23,
    "zona": "",
    "ufficiosa": false
@@ -161,15 +161,15 @@
    "pos": 12,
    "squadra": "REAL ROMBON",
    "pt": 0,
-   "g": 6,
+   "g": 7,
    "v": 0,
-   "p": 6,
+   "p": 7,
    "n": 0,
    "pen": 0,
-   "gf": 11,
-   "gs": 26,
+   "gf": 15,
+   "gs": 33,
    "zona": "",
-   "ufficiosa": false
+   "ufficiosa": true
   }
  ]
 }
